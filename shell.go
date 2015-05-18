@@ -150,36 +150,43 @@ func (s *Shell) Pin(path string) error {
 	return nil
 }
 
-func (s *Shell) FindPeer(peer string) error {
+type PeerInfo struct {
+	Addrs []string
+	ID    string
+}
+
+func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 	ropts, err := cc.Root.GetOptions([]string{"dht", "findpeer"})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fpeer := cc.DhtCmd.Subcommands["findpeer"]
 
 	req, err := cmds.NewRequest([]string{"dht", "findpeer", peer}, nil, nil, nil, fpeer, ropts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resp, err := s.client.Send(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.Error() != nil {
-		return resp.Error()
+		return nil, resp.Error()
 	}
 
 	read, err := resp.Reader()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	out, err := ioutil.ReadAll(read)
+	str := struct {
+		Responses []PeerInfo
+	}{}
+	err = json.NewDecoder(read).Decode(&str)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	fmt.Println(string(out))
-	return nil
+	return &str.Responses[0], nil
 }
