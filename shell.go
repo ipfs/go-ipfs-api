@@ -2,7 +2,9 @@
 package shell
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -188,5 +190,48 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 		return nil, err
 	}
 
+	if len(str.Responses) == 0 {
+		return nil, errors.New("peer not found")
+	}
+
 	return &str.Responses[0], nil
+}
+
+func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"refs"})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := cmds.NewRequest([]string{"refs", hash}, nil, nil, nil, cc.RefsCmd, ropts)
+	if err != nil {
+		return nil, err
+	}
+	req.SetOption("r", recursive)
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Error() != nil {
+		return nil, resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(chan string)
+	go func() {
+		scan := bufio.NewScanner(read)
+		for scan.Scan() {
+			if len(scan.Text()) > 0 {
+				out <- scan.Text()
+			}
+		}
+		close(out)
+	}()
+
+	return out, nil
 }
