@@ -23,6 +23,52 @@ func NewShell(url string) *Shell {
 	return &Shell{http.NewClient(url)}
 }
 
+type IdOutput struct {
+	ID              string
+	PublicKey       string
+	Addresses       []string
+	AgentVersion    string
+	ProtocolVersion string
+}
+
+// ID gets information about a given peer.  Arguments:
+//
+// peer: peer.ID of the node to look up.  If no peer is specified,
+//   return information about the local peer.
+func (s *Shell) ID(peer ...string) (*IdOutput, error) {
+	if len(peer) > 1 {
+		return nil, fmt.Errorf("Too many peer arguments")
+	}
+	ropts, err := cc.Root.GetOptions([]string{"id"})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := cmds.NewRequest(append([]string{"id"}, peer...), nil, nil, nil, cc.IDCmd, ropts)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return nil, err
+	}
+
+	reader, err := resp.Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(reader)
+	out := new(IdOutput)
+	err = decoder.Decode(out)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
 // Cat the content at the given path
 func (s *Shell) Cat(path string) (io.Reader, error) {
 	ropts, err := cc.Root.GetOptions([]string{"cat"})
