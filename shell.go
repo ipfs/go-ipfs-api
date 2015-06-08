@@ -235,3 +235,45 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 
 	return out, nil
 }
+
+func (s *Shell) Patch(root, action string, args ...string) (string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"object", "patch"})
+	if err != nil {
+		return "", err
+	}
+
+	patchcmd := cc.ObjectCmd.Subcommand("patch")
+
+	cmdargs := append([]string{root, action}, args...)
+	req, err := cmds.NewRequest([]string{"object", "patch"}, nil, cmdargs, nil, patchcmd, ropts)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.Error() != nil {
+		return "", resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(read)
+	var out map[string]interface{}
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	hash, ok := out["Hash"]
+	if !ok {
+		return "", errors.New("no Hash field in command response")
+	}
+
+	return hash.(string), nil
+}
