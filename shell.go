@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	cmds "github.com/ipfs/go-ipfs/commands"
 	files "github.com/ipfs/go-ipfs/commands/files"
 	http "github.com/ipfs/go-ipfs/commands/http"
 	cc "github.com/ipfs/go-ipfs/core/commands"
+
+	tar "github.com/ipfs/go-ipfs/thirdparty/tar"
 )
 
 type Shell struct {
@@ -121,6 +124,63 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 	err = dec.Decode(&out)
 	if err != nil {
 		return "", err
+	}
+
+	return out.Hash, nil
+}
+
+// AddDir adds a directory recursively with all of the files under it
+func (s *Shell) AddDir(dir string) (string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"add"})
+	if err != nil {
+		return "", err
+	}
+
+	dfi, err := os.Open(dir)
+	if err != nil {
+		return "", err
+	}
+
+	sf, err := files.NewSerialFile(dir, dfi)
+	if err != nil {
+		return "", err
+	}
+	slf := files.NewSliceFile(dir, []files.File{sf})
+
+	req, err := cmds.NewRequest([]string{"add"}, nil, nil, slf, cc.AddCmd, ropts)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.Error() != nil {
+		return "", resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(read)
+	out := struct{ Hash string }{}
+	var final string
+	for {
+		err = dec.Decode(&out)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", err
+		}
+		final = out.Hash
+	}
+
+	if final == "" {
+		return "", errors.New("no results received")
 	}
 
 	return out.Hash, nil
@@ -292,6 +352,79 @@ func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 
 	cmdargs := append([]string{root, action}, args...)
 	req, err := cmds.NewRequest([]string{"object", "patch"}, nil, cmdargs, nil, patchcmd, ropts)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.Error() != nil {
+		return "", resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(read)
+	var out map[string]interface{}
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	hash, ok := out["Hash"]
+	if !ok {
+		return "", errors.New("no Hash field in command response")
+	}
+
+	return hash.(string), nil
+}
+
+func (s *Shell) Get(hash, outdir string) error {
+	ropts, err := cc.Root.GetOptions([]string{"get"})
+	if err != nil {
+		return err
+	}
+
+	req, err := cmds.NewRequest([]string{"get", hash}, nil, nil, nil, cc.GetCmd, ropts)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return err
+	}
+	if resp.Error() != nil {
+		return resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return err
+	}
+
+	extractor := &tar.Extractor{Path: outdir}
+	return extractor.Extract(read)
+}
+
+func (s *Shell) NewObject(template string) (string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"object", "new"})
+	if err != nil {
+		return "", err
+	}
+
+	newcmd := cc.ObjectCmd.Subcommand("new")
+
+	args := []string{"object", "new"}
+	if template != "" {
+		args = append(args, template)
+	}
+	req, err := cmds.NewRequest(args, nil, nil, nil, newcmd, ropts)
 	if err != nil {
 		return "", err
 	}
