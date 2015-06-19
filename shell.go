@@ -47,7 +47,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest(append([]string{"id"}, peer...), nil, nil, nil, cc.IDCmd, ropts)
+	req, err := cmds.NewRequest([]string{"id"}, nil, peer, nil, cc.IDCmd, ropts)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (s *Shell) Cat(path string) (io.Reader, error) {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest([]string{"cat", path}, nil, nil, nil, cc.CatCmd, ropts)
+	req, err := cmds.NewRequest([]string{"cat"}, nil, []string{path}, nil, cc.CatCmd, ropts)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (s *Shell) List(path string) ([]cc.Link, error) {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest([]string{"ls", path}, nil, nil, nil, cc.LsCmd, ropts)
+	req, err := cmds.NewRequest([]string{"ls"}, nil, []string{path}, nil, cc.LsCmd, ropts)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (s *Shell) Pin(path string) error {
 	}
 	pinadd := cc.PinCmd.Subcommands["add"]
 
-	req, err := cmds.NewRequest([]string{"pin", "add", path}, nil, nil, nil, pinadd, ropts)
+	req, err := cmds.NewRequest([]string{"pin", "add"}, nil, []string{path}, nil, pinadd, ropts)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 	}
 	fpeer := cc.DhtCmd.Subcommands["findpeer"]
 
-	req, err := cmds.NewRequest([]string{"dht", "findpeer", peer}, nil, nil, nil, fpeer, ropts)
+	req, err := cmds.NewRequest([]string{"dht", "findpeer"}, nil, []string{peer}, nil, fpeer, ropts)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +315,7 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest([]string{"refs", hash}, nil, nil, nil, cc.RefsCmd, ropts)
+	req, err := cmds.NewRequest([]string{"refs"}, nil, []string{hash}, nil, cc.RefsCmd, ropts)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,7 @@ func (s *Shell) Get(hash, outdir string) error {
 		return err
 	}
 
-	req, err := cmds.NewRequest([]string{"get", hash}, nil, nil, nil, cc.GetCmd, ropts)
+	req, err := cmds.NewRequest([]string{"get"}, nil, []string{hash}, nil, cc.GetCmd, ropts)
 	if err != nil {
 		return err
 	}
@@ -426,11 +426,12 @@ func (s *Shell) NewObject(template string) (string, error) {
 
 	newcmd := cc.ObjectCmd.Subcommand("new")
 
-	args := []string{"object", "new"}
+	path := []string{"object", "new"}
+	args := []string{}
 	if template != "" {
-		args = append(args, template)
+		args = []string{template}
 	}
-	req, err := cmds.NewRequest(args, nil, nil, nil, newcmd, ropts)
+	req, err := cmds.NewRequest(path, nil, args, nil, newcmd, ropts)
 	if err != nil {
 		return "", err
 	}
