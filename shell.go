@@ -56,6 +56,9 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp.Error() != nil {
+		return nil, resp.Error()
+	}
 
 	reader, err := resp.Reader()
 	if err != nil {
@@ -87,6 +90,9 @@ func (s *Shell) Cat(path string) (io.Reader, error) {
 	resp, err := s.client.Send(req)
 	if err != nil {
 		return nil, err
+	}
+	if resp.Error() != nil {
+		return nil, resp.Error()
 	}
 
 	return resp.Reader()
