@@ -56,6 +56,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return nil, resp.Error()
 	}
@@ -95,7 +96,19 @@ func (s *Shell) Cat(path string) (io.Reader, error) {
 		return nil, resp.Error()
 	}
 
-	return resp.Reader()
+	read, err := resp.Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	r, w := io.Pipe()
+	go func() {
+		defer resp.Close()
+		defer w.Close()
+		io.Copy(w, read)
+	}()
+
+	return r, nil
 }
 
 // Add a file to ipfs from the given reader, returns the hash of the added file
@@ -116,6 +129,7 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}
@@ -162,6 +176,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}
@@ -208,6 +223,7 @@ func (s *Shell) List(path string) ([]cc.Link, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 
 	if resp.Error() != nil {
 		return nil, resp.Error()
@@ -246,6 +262,7 @@ func (s *Shell) Pin(path string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return resp.Error()
 	}
@@ -285,6 +302,7 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return nil, resp.Error()
 	}
@@ -325,6 +343,7 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return nil, resp.Error()
 	}
@@ -366,6 +385,7 @@ func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}
@@ -409,6 +429,7 @@ func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, er
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}
@@ -448,6 +469,7 @@ func (s *Shell) Get(hash, outdir string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return resp.Error()
 	}
@@ -483,6 +505,7 @@ func (s *Shell) NewObject(template string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}
@@ -526,6 +549,7 @@ func (s *Shell) ResolvePath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}

@@ -27,6 +27,7 @@ func (s *Shell) Publish(node string, value string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return resp.Error()
 	}
@@ -49,6 +50,7 @@ func (s *Shell) Resolve(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return "", resp.Error()
 	}

@@ -25,6 +25,7 @@ func (s *Shell) FileList(path string) (*unixfs.LsObject, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Close()
 	if resp.Error() != nil {
 		return nil, resp.Error()
 	}

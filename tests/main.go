@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"time"
 
 	"github.com/whyrusleeping/ipfs-shell"
 
@@ -11,6 +12,14 @@ import (
 )
 
 var sh *shell.Shell
+var ncalls int
+
+var _ = time.ANSIC
+
+func sleep() {
+	ncalls++
+	//time.Sleep(time.Millisecond * 5)
+}
 
 func randString() string {
 	alpha := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
@@ -31,6 +40,7 @@ func makeRandomObject() (string, error) {
 	size := x * y * z
 
 	r := io.LimitReader(u.NewTimeSeededRand(), int64(size))
+	sleep()
 	return sh.Add(r)
 }
 
@@ -38,6 +48,7 @@ func makeRandomDir(depth int) (string, error) {
 	if depth <= 0 {
 		return makeRandomObject()
 	}
+	sleep()
 	empty, err := sh.NewObject("unixfs-dir")
 	if err != nil {
 		return "", err
@@ -59,6 +70,7 @@ func makeRandomDir(depth int) (string, error) {
 		}
 
 		name := randString()
+		sleep()
 		nobj, err := sh.PatchLink(curdir, name, obj, true)
 		if err != nil {
 			return "", err
@@ -71,11 +83,24 @@ func makeRandomDir(depth int) (string, error) {
 
 func main() {
 	sh = shell.NewShell("localhost:5001")
+	for i := 0; i < 200; i++ {
+		_, err := makeRandomObject()
+		if err != nil {
+			fmt.Println("errrrrrr: ", err)
+			return
+		}
+	}
+	fmt.Println("we're okay")
+
 	out, err := makeRandomDir(10)
+	fmt.Printf("%d calls\n", ncalls)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	fmt.Println(out)
+	for {
+		time.Sleep(time.Second * 1000)
+	}
 }
