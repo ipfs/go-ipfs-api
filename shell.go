@@ -384,7 +384,50 @@ func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 
 	hash, ok := out["Hash"]
 	if !ok {
-		return "", errors.New("no Hash field in command response")
+		return "", errors.New("(patch) no Hash field in command response")
+	}
+
+	return hash.(string), nil
+}
+
+func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"object", "patch"})
+	if err != nil {
+		return "", err
+	}
+
+	patchcmd := cc.ObjectCmd.Subcommand("patch")
+
+	cmdargs := []string{root, "add-link", path, childhash}
+	req, err := cmds.NewRequest([]string{"object", "patch"}, nil, cmdargs, nil, patchcmd, ropts)
+	if err != nil {
+		return "", err
+	}
+
+	req.SetOption("create", create)
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.Error() != nil {
+		return "", resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(read)
+	var out map[string]interface{}
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	hash, ok := out["Hash"]
+	if !ok {
+		return "", errors.New("(patchlink) no Hash field in command response")
 	}
 
 	return hash.(string), nil
@@ -458,8 +501,51 @@ func (s *Shell) NewObject(template string) (string, error) {
 
 	hash, ok := out["Hash"]
 	if !ok {
-		return "", errors.New("no Hash field in command response")
+		return "", errors.New("(newobject) no Hash field in command response")
 	}
 
 	return hash.(string), nil
+}
+
+func (s *Shell) ResolvePath(path string) (string, error) {
+	ropts, err := cc.Root.GetOptions([]string{"object", "stat"})
+	if err != nil {
+		return "", err
+	}
+
+	statcmd := cc.ObjectCmd.Subcommand("stat")
+
+	cmdstrs := []string{"object", "stat"}
+	args := []string{path}
+	req, err := cmds.NewRequest(cmdstrs, nil, args, nil, statcmd, ropts)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := s.client.Send(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.Error() != nil {
+		return "", resp.Error()
+	}
+
+	read, err := resp.Reader()
+	if err != nil {
+		return "", err
+	}
+
+	dec := json.NewDecoder(read)
+	var out map[string]interface{}
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	key, ok := out["Hash"]
+	if !ok {
+		return "", errors.New("(resolvepath) no Hash field in command response")
+	}
+
+	return key.(string), nil
 }
