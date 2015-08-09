@@ -8,22 +8,32 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	gohttp "net/http"
 	"os"
 
-	cmds "github.com/ipfs/go-ipfs/commands"
-	files "github.com/ipfs/go-ipfs/commands/files"
-	http "github.com/ipfs/go-ipfs/commands/http"
-	cc "github.com/ipfs/go-ipfs/core/commands"
+	files "github.com/whyrusleeping/go-multipart-files"
 
-	tar "github.com/ipfs/go-ipfs/thirdparty/tar"
+	tar "github.com/whyrusleeping/tar-utils"
 )
 
 type Shell struct {
-	client http.Client
+	url     string
+	httpcli *gohttp.Client
 }
 
 func NewShell(url string) *Shell {
-	return &Shell{http.NewClient(url)}
+	return &Shell{
+		url: url,
+		httpcli: &gohttp.Client{
+			Transport: &gohttp.Transport{
+				DisableKeepAlives: true,
+			},
+		},
+	}
+}
+
+func (s *Shell) newRequest(command string, args ...string) *Request {
+	return NewRequest(s.url, command, args...)
 }
 
 type IdOutput struct {
@@ -42,31 +52,18 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if len(peer) > 1 {
 		return nil, fmt.Errorf("Too many peer arguments")
 	}
-	ropts, err := cc.Root.GetOptions([]string{"id"})
+
+	resp, err := NewRequest(s.url, "id", peer...).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest([]string{"id"}, nil, peer, nil, cc.IDCmd, ropts)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Send(req)
-	if err != nil {
-		return nil, err
-	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return nil, resp.Error()
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
-	reader, err := resp.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	decoder := json.NewDecoder(reader)
+	decoder := json.NewDecoder(resp.Output)
 	out := new(IdOutput)
 	err = decoder.Decode(out)
 	if err != nil {
@@ -78,70 +75,56 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 
 // Cat the content at the given path
 func (s *Shell) Cat(path string) (io.Reader, error) {
-	ropts, err := cc.Root.GetOptions([]string{"cat"})
+	resp, err := NewRequest(s.url, "cat", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
-
-	req, err := cmds.NewRequest([]string{"cat"}, nil, []string{path}, nil, cc.CatCmd, ropts)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Send(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.Error() != nil {
-		return nil, resp.Error()
-	}
-
-	read, err := resp.Reader()
-	if err != nil {
-		return nil, err
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
 	r, w := io.Pipe()
 	go func() {
 		defer resp.Close()
 		defer w.Close()
-		io.Copy(w, read)
+		io.Copy(w, resp.Output)
 	}()
 
 	return r, nil
 }
 
+type object struct {
+	Hash string
+}
+
 // Add a file to ipfs from the given reader, returns the hash of the added file
 func (s *Shell) Add(r io.Reader) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"add"})
-	if err != nil {
-		return "", err
+	var rc io.ReadCloser
+	if rclose, ok := r.(io.ReadCloser); ok {
+		rc = rclose
+	} else {
+		rc = ioutil.NopCloser(r)
 	}
 
-	slf := files.NewSliceFile("", []files.File{files.NewReaderFile("", ioutil.NopCloser(r), nil)})
+	// handler expects an array of files
+	fr := files.NewReaderFile("", rc, nil)
+	slf := files.NewSliceFile("", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
 
-	req, err := cmds.NewRequest([]string{"add"}, nil, nil, slf, cc.AddCmd, ropts)
-	if err != nil {
-		return "", err
-	}
+	req := NewRequest(s.url, "add")
+	req.Body = fileReader
 
-	resp, err := s.client.Send(req)
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return "", err
-	}
-
-	dec := json.NewDecoder(read)
-	out := struct{ Hash string }{}
-	err = dec.Decode(&out)
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
@@ -151,11 +134,6 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 
 // AddDir adds a directory recursively with all of the files under it
 func (s *Shell) AddDir(dir string) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"add"})
-	if err != nil {
-		return "", err
-	}
-
 	dfi, err := os.Open(dir)
 	if err != nil {
 		return "", err
@@ -166,30 +144,25 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		return "", err
 	}
 	slf := files.NewSliceFile(dir, []files.File{sf})
+	reader := files.NewMultiFileReader(slf, true)
 
-	req, err := cmds.NewRequest([]string{"add"}, nil, nil, slf, cc.AddCmd, ropts)
-	if err != nil {
-		return "", err
-	}
+	req := NewRequest(s.url, "add")
+	req.Opts["r"] = "true"
+	req.Body = reader
 
-	resp, err := s.client.Send(req)
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return "", err
-	}
-
-	dec := json.NewDecoder(read)
-	out := struct{ Hash string }{}
+	dec := json.NewDecoder(resp.Output)
 	var final string
 	for {
+		var out object
 		err = dec.Decode(&out)
 		if err != nil {
 			if err == io.EOF {
@@ -204,39 +177,23 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		return "", errors.New("no results received")
 	}
 
-	return out.Hash, nil
+	return final, nil
 }
 
 // List entries at the given path
-func (s *Shell) List(path string) ([]cc.Link, error) {
-	ropts, err := cc.Root.GetOptions([]string{"ls"})
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := cmds.NewRequest([]string{"ls"}, nil, []string{path}, nil, cc.LsCmd, ropts)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Send(req)
+func (s *Shell) List(path string) ([]*LsLink, error) {
+	resp, err := NewRequest(s.url, "ls", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Close()
 
-	if resp.Error() != nil {
-		return nil, resp.Error()
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	dec := json.NewDecoder(read)
-	out := struct{ Objects []cc.Object }{}
-	err = dec.Decode(&out)
+	var out struct{ Objects []LsObject }
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return nil, err
 	}
@@ -244,40 +201,32 @@ func (s *Shell) List(path string) ([]cc.Link, error) {
 	return out.Objects[0].Links, nil
 }
 
+type LsLink struct {
+	Hash string
+	Name string
+	Size uint64
+	Type string
+}
+
+type LsObject struct {
+	Links []*LsLink
+	LsLink
+}
+
 // Pin the given path
 func (s *Shell) Pin(path string) error {
-	ropts, err := cc.Root.GetOptions([]string{"pin", "add"})
-	if err != nil {
-		return err
-	}
-	pinadd := cc.PinCmd.Subcommands["add"]
+	req := NewRequest(s.url, "pin/add", path)
+	req.Opts["r"] = "true"
 
-	req, err := cmds.NewRequest([]string{"pin", "add"}, nil, []string{path}, nil, pinadd, ropts)
-	if err != nil {
-		return err
-	}
-	req.SetOption("r", true)
-
-	resp, err := s.client.Send(req)
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return resp.Error()
+	if resp.Error != nil {
+		return resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return err
-	}
-
-	out, err := ioutil.ReadAll(read)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(out))
 	return nil
 }
 
@@ -287,35 +236,18 @@ type PeerInfo struct {
 }
 
 func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
-	ropts, err := cc.Root.GetOptions([]string{"dht", "findpeer"})
-	if err != nil {
-		return nil, err
-	}
-	fpeer := cc.DhtCmd.Subcommands["findpeer"]
-
-	req, err := cmds.NewRequest([]string{"dht", "findpeer"}, nil, []string{peer}, nil, fpeer, ropts)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Send(req)
+	resp, err := s.newRequest("dht/findpeer", peer).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return nil, resp.Error()
+
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	str := struct {
-		Responses []PeerInfo
-	}{}
-	err = json.NewDecoder(read).Decode(&str)
+	str := struct{ Responses []PeerInfo }{}
+	err = json.NewDecoder(resp.Output).Decode(&str)
 	if err != nil {
 		return nil, err
 	}
@@ -328,34 +260,24 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 }
 
 func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"refs"})
+	req := s.newRequest("refs", hash)
+	if recursive {
+		req.Opts["r"] = "true"
+	}
+
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := cmds.NewRequest([]string{"refs"}, nil, []string{hash}, nil, cc.RefsCmd, ropts)
-	if err != nil {
-		return nil, err
-	}
-	req.SetOption("r", recursive)
-
-	resp, err := s.client.Send(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Close()
-	if resp.Error() != nil {
-		return nil, resp.Error()
-	}
-
-	read, err := resp.Reader()
-	if err != nil {
-		return nil, err
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
 	out := make(chan string)
 	go func() {
-		scan := bufio.NewScanner(read)
+		defer resp.Close()
+		scan := bufio.NewScanner(resp.Output)
 		for scan.Scan() {
 			if len(scan.Text()) > 0 {
 				out <- scan.Text()
@@ -368,208 +290,110 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 }
 
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"object", "patch"})
-	if err != nil {
-		return "", err
-	}
-
-	patchcmd := cc.ObjectCmd.Subcommand("patch")
-
 	cmdargs := append([]string{root, action}, args...)
-	req, err := cmds.NewRequest([]string{"object", "patch"}, nil, cmdargs, nil, patchcmd, ropts)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := s.client.Send(req)
+	resp, err := s.newRequest("object/patch", cmdargs...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return "", err
-	}
-
-	dec := json.NewDecoder(read)
-	var out map[string]interface{}
+	dec := json.NewDecoder(resp.Output)
+	var out object
 	err = dec.Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	hash, ok := out["Hash"]
-	if !ok {
-		return "", errors.New("(patch) no Hash field in command response")
-	}
-
-	return hash.(string), nil
+	return out.Hash, nil
 }
 
 func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"object", "patch"})
-	if err != nil {
-		return "", err
-	}
-
-	patchcmd := cc.ObjectCmd.Subcommand("patch")
-
 	cmdargs := []string{root, "add-link", path, childhash}
-	req, err := cmds.NewRequest([]string{"object", "patch"}, nil, cmdargs, nil, patchcmd, ropts)
-	if err != nil {
-		return "", err
+
+	req := s.newRequest("object/patch", cmdargs...)
+	if create {
+		req.Opts["create"] = "true"
 	}
 
-	req.SetOption("create", create)
-	resp, err := s.client.Send(req)
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	dec := json.NewDecoder(read)
-	var out map[string]interface{}
-	err = dec.Decode(&out)
-	if err != nil {
-		return "", err
-	}
-
-	hash, ok := out["Hash"]
-	if !ok {
-		return "", errors.New("(patchlink) no Hash field in command response")
-	}
-
-	return hash.(string), nil
+	return out.Hash, nil
 }
 
 func (s *Shell) Get(hash, outdir string) error {
-	ropts, err := cc.Root.GetOptions([]string{"get"})
-	if err != nil {
-		return err
-	}
-
-	req, err := cmds.NewRequest([]string{"get"}, nil, []string{hash}, nil, cc.GetCmd, ropts)
-	if err != nil {
-		return err
-	}
-
-	resp, err := s.client.Send(req)
+	resp, err := s.newRequest("get", hash).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return resp.Error()
-	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return err
+	if resp.Error != nil {
+		return resp.Error
 	}
 
 	extractor := &tar.Extractor{Path: outdir}
-	return extractor.Extract(read)
+	return extractor.Extract(resp.Output)
 }
 
 func (s *Shell) NewObject(template string) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"object", "new"})
-	if err != nil {
-		return "", err
-	}
-
-	newcmd := cc.ObjectCmd.Subcommand("new")
-
-	path := []string{"object", "new"}
 	args := []string{}
 	if template != "" {
 		args = []string{template}
 	}
-	req, err := cmds.NewRequest(path, nil, args, nil, newcmd, ropts)
-	if err != nil {
-		return "", err
-	}
 
-	resp, err := s.client.Send(req)
+	resp, err := s.newRequest("object/new", args...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	dec := json.NewDecoder(read)
-	var out map[string]interface{}
-	err = dec.Decode(&out)
-	if err != nil {
-		return "", err
-	}
-
-	hash, ok := out["Hash"]
-	if !ok {
-		return "", errors.New("(newobject) no Hash field in command response")
-	}
-
-	return hash.(string), nil
+	return out.Hash, nil
 }
 
 func (s *Shell) ResolvePath(path string) (string, error) {
-	ropts, err := cc.Root.GetOptions([]string{"object", "stat"})
-	if err != nil {
-		return "", err
-	}
-
-	statcmd := cc.ObjectCmd.Subcommand("stat")
-
-	cmdstrs := []string{"object", "stat"}
-	args := []string{path}
-	req, err := cmds.NewRequest(cmdstrs, nil, args, nil, statcmd, ropts)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := s.client.Send(req)
+	resp, err := s.newRequest("object/stat", path).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return "", resp.Error()
+
+	if resp.Error != nil {
+		return "", resp.Error
 	}
 
-	read, err := resp.Reader()
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	dec := json.NewDecoder(read)
-	var out map[string]interface{}
-	err = dec.Decode(&out)
-	if err != nil {
-		return "", err
-	}
-
-	key, ok := out["Hash"]
-	if !ok {
-		return "", errors.New("(resolvepath) no Hash field in command response")
-	}
-
-	return key.(string), nil
+	return out.Hash, nil
 }

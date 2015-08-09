@@ -3,41 +3,26 @@ package shell
 import (
 	"encoding/json"
 	"fmt"
-
-	cmds "github.com/ipfs/go-ipfs/commands"
-	cc "github.com/ipfs/go-ipfs/core/commands"
-	unixfs "github.com/ipfs/go-ipfs/core/commands/unixfs"
 )
 
+type lsOutput struct {
+	Objects map[string]*LsObject
+}
+
 // FileList entries at the given path using the UnixFS commands
-func (s *Shell) FileList(path string) (*unixfs.LsObject, error) {
-	ropts, err := cc.Root.GetOptions([]string{"file", "ls"})
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := cmds.NewRequest([]string{"file", "ls"}, nil, []string{path}, nil, unixfs.LsCmd, ropts)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Send(req)
+func (s *Shell) FileList(path string) (*LsObject, error) {
+	resp, err := s.newRequest("file/ls", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Close()
-	if resp.Error() != nil {
-		return nil, resp.Error()
+
+	if resp.Error != nil {
+		return nil, resp.Error
 	}
 
-	read, err := resp.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	dec := json.NewDecoder(read)
-	out := unixfs.LsOutput{}
-	err = dec.Decode(&out)
+	var out lsOutput
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return nil, err
 	}
