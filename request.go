@@ -1,12 +1,12 @@
 package shell
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	files "github.com/whyrusleeping/go-multipart-files"
@@ -87,24 +87,30 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 
 	nresp.Output = resp.Body
 	if resp.StatusCode >= http.StatusBadRequest {
+		var e *Error
 		switch {
 		case resp.StatusCode == http.StatusNotFound:
 			nresp.Error = &Error{"command not found"}
 		case contentType == "text/plain":
 			out, err := ioutil.ReadAll(resp.Body)
-			_ = err // already in an error case...
-			e := &Error{string(out)}
-			nresp.Error = e
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response read error: %s\n", err)
+			}
+			e = &Error{string(out)}
+		case contentType == "application/json":
+			e = new(Error)
+			if err = json.NewDecoder(resp.Body).Decode(e); err != nil {
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response unmarshall error: %s\n", err)
+			}
 		default:
-			buf := new(bytes.Buffer)
-			io.Copy(buf, resp.Body)
-			fmt.Println(contentType)
-			fmt.Println(buf.String())
-			e := new(Error)
-			err := json.NewDecoder(buf).Decode(e)
-			_ = err
-			nresp.Error = e
+			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response encoding: %s", contentType)
+			out, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "ipfs-shell: response read error: %s\n", err)
+			}
+			e = &Error{fmt.Sprintf("unknown ipfs-shell error encoding: %s - %q", contentType, out)}
 		}
+		nresp.Error = e
 		nresp.Output = nil
 
 		// drain body and close
