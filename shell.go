@@ -12,7 +12,6 @@ import (
 	"os"
 
 	files "github.com/whyrusleeping/go-multipart-files"
-
 	tar "github.com/whyrusleeping/tar-utils"
 )
 
@@ -74,7 +73,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 }
 
 // Cat the content at the given path
-func (s *Shell) Cat(path string) (io.Reader, error) {
+func (s *Shell) Cat(path string) (io.ReadCloser, error) {
 	resp, err := NewRequest(s.url, "cat", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
@@ -83,14 +82,7 @@ func (s *Shell) Cat(path string) (io.Reader, error) {
 		return nil, resp.Error
 	}
 
-	r, w := io.Pipe()
-	go func() {
-		defer resp.Close()
-		defer w.Close()
-		io.Copy(w, resp.Output)
-	}()
-
-	return r, nil
+	return resp.Output, nil
 }
 
 type object struct {
