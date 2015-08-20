@@ -72,7 +72,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	return out, nil
 }
 
-// Cat the content at the given path
+// Cat the content at the given path. Callers need to drain and close the returned reader after usage.
 func (s *Shell) Cat(path string) (io.ReadCloser, error) {
 	resp, err := NewRequest(s.url, "cat", path).Send(s.httpcli)
 	if err != nil {
