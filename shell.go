@@ -198,6 +198,14 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	return final, nil
 }
 
+const (
+	TRaw = iota
+	TDirectory
+	TFile
+	TMetadata
+	TSymlink
+)
+
 // List entries at the given path
 func (s *Shell) List(path string) ([]*LsLink, error) {
 	resp, err := NewRequest(s.url, "ls", path).Send(s.httpcli)
@@ -223,7 +231,7 @@ type LsLink struct {
 	Hash string
 	Name string
 	Size uint64
-	Type string
+	Type int
 }
 
 type LsObject struct {
