@@ -17,7 +17,11 @@ func (s *Shell) Publish(node string, value string) error {
 	}
 	defer resp.Close()
 
-	return resp.Error
+	if resp.Error != nil {
+		return resp.Error
+	}
+
+	return nil
 }
 
 func (s *Shell) Resolve(id string) (string, error) {
