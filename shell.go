@@ -99,8 +99,8 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 	}
 
 	// handler expects an array of files
-	fr := files.NewReaderFile("", rc, nil)
-	slf := files.NewSliceFile("", []files.File{fr})
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	req := NewRequest(s.url, "add")
@@ -124,18 +124,44 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 	return out.Hash, nil
 }
 
-// AddDir adds a directory recursively with all of the files under it
-func (s *Shell) AddDir(dir string) (string, error) {
-	dfi, err := os.Open(dir)
+func (s *Shell) AddLink(target string) (string, error) {
+	link := files.NewLinkFile("", "", target, nil)
+	slf := files.NewSliceFile("", "", []files.File{link})
+	reader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("add")
+	req.Body = reader
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	sf, err := files.NewSerialFile(dir, dfi)
+	return out.Hash, nil
+}
+
+// AddDir adds a directory recursively with all of the files under it
+func (s *Shell) AddDir(dir string) (string, error) {
+	stat, err := os.Lstat(dir)
 	if err != nil {
 		return "", err
 	}
-	slf := files.NewSliceFile(dir, []files.File{sf})
+
+	sf, err := files.NewSerialFile("", dir, stat)
+	if err != nil {
+		return "", err
+	}
+	slf := files.NewSliceFile("", dir, []files.File{sf})
 	reader := files.NewMultiFileReader(slf, true)
 
 	req := NewRequest(s.url, "add")
