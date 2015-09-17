@@ -13,8 +13,8 @@ type UnixLsObject struct {
 }
 
 type UnixLsLink struct {
-	Hash string
 	Name string
+	Hash string
 	Size uint64
 	Type string
 }

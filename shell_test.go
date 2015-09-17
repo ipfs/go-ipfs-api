@@ -35,6 +35,7 @@ func TestCat(t *testing.T) {
 	_, err = io.Copy(md5, rc)
 	is.Nil(err)
 	is.Equal(fmt.Sprintf("%x", md5.Sum(nil)), "3fdcaad186e79983a6920b4c7eeda949")
+	is.Nil(rc.Close())
 }
 
 func TestList(t *testing.T) {
@@ -103,9 +104,9 @@ func TestPatchLink(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	newRoot, err := s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", true)
+	newRoot, err := s.PatchLink(examplesHash, "about", "QmTumTjvcYCAvRRwQ8sDRxh8ezmrcr88YFU7iYNroGGTBZ", true)
 	is.Nil(err)
-	is.Equal(newRoot, "QmQwWjFnEPxwmkb5Ukn6UnbrBVebSAYnM11nmMs89e7zH9")
+	is.Equal(newRoot, "QmVzqYyt8au7nJCz3cPPyN2qXQRhjU1yfEnJc4BoBqsWXb")
 }
 
 func TestResolvePath(t *testing.T) {
