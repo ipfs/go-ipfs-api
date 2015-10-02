@@ -256,6 +256,23 @@ func (s *Shell) Pin(path string) error {
 	return nil
 }
 
+// Unpin the given path
+func (s *Shell) Unpin(path string) error {
+	req := NewRequest(s.url, "pin/rm", path)
+	req.Opts["r"] = "true"
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+	if resp.Error != nil {
+		return resp.Error
+	}
+
+	return nil
+}
+
 type PeerInfo struct {
 	Addrs []string
 	ID    string
