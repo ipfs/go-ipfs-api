@@ -440,3 +440,28 @@ func (s *Shell) ResolvePath(path string) (string, error) {
 
 	return out.Hash, nil
 }
+
+// returns ipfs version and commit sha
+func (s *Shell) Version() (string, string, error) {
+	resp, err := s.newRequest("version").Send(s.httpcli)
+	if err != nil {
+		return "", "", err
+	}
+
+	defer resp.Close()
+	if resp.Error != nil {
+		return "", "", resp.Error
+	}
+
+	ver := struct {
+		Version string
+		Commit  string
+	}{}
+
+	err = json.NewDecoder(resp.Output).Decode(&ver)
+	if err != nil {
+		return "", "", err
+	}
+
+	return ver.Version, ver.Commit, nil
+}
