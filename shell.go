@@ -465,3 +465,8 @@ func (s *Shell) Version() (string, string, error) {
 
 	return ver.Version, ver.Commit, nil
 }
+
+func (s *Shell) IsUp() bool {
+	_, err := s.ID()
+	return err == nil
+}
