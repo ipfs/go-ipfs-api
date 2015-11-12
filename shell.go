@@ -470,3 +470,27 @@ func (s *Shell) IsUp() bool {
 	_, err := s.ID()
 	return err == nil
 }
+
+func (s *Shell) BlockStat(path string) (string, int, error) {
+	resp, err := s.newRequest("block/stat", path).Send(s.httpcli)
+	if err != nil {
+		return "", 0, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", 0, resp.Error
+	}
+
+	var inf struct {
+		Key  string
+		Size int
+	}
+
+	err = json.NewDecoder(resp.Output).Decode(&inf)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return inf.Key, inf.Size, nil
+}
