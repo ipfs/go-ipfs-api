@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -54,11 +55,16 @@ func (r *Response) Close() error {
 }
 
 type Error struct {
+	Command string
 	Message string
 }
 
 func (e *Error) Error() string {
-	return e.Message
+	var out string
+	if e.Command != "" {
+		out = e.Command + ": "
+	}
+	return out + e.Message
 }
 
 func (r *Request) Send(c *http.Client) (*Response, error) {
@@ -90,13 +96,19 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		var e *Error
 		switch {
 		case resp.StatusCode == http.StatusNotFound:
-			nresp.Error = &Error{"command not found"}
+			nresp.Error = &Error{
+				Command: r.Command,
+				Message: "command not found",
+			}
 		case contentType == "text/plain":
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response read error: %s\n", err)
 			}
-			e = &Error{string(out)}
+			e = &Error{
+				Command: r.Command,
+				Message: string(out),
+			}
 		case contentType == "application/json":
 			e = new(Error)
 			if err = json.NewDecoder(resp.Body).Decode(e); err != nil {
@@ -108,7 +120,10 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: response read error: %s\n", err)
 			}
-			e = &Error{fmt.Sprintf("unknown ipfs-shell error encoding: %s - %q", contentType, out)}
+			e = &Error{
+				Command: r.Command,
+				Message: fmt.Sprintf("unknown ipfs-shell error encoding: %q - %q", contentType, out),
+			}
 		}
 		nresp.Error = e
 		nresp.Output = nil
@@ -124,10 +139,10 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 func (r *Request) getURL() string {
 	argstring := ""
 	for _, arg := range r.Args {
-		argstring += fmt.Sprintf("arg=%s&", arg)
+		argstring += fmt.Sprintf("arg=%s&", url.QueryEscape(arg))
 	}
 	for k, v := range r.Opts {
-		argstring += fmt.Sprintf("%s=%s&", k, v)
+		argstring += fmt.Sprintf("%s=%s&", url.QueryEscape(k), url.QueryEscape(v))
 	}
 
 	return fmt.Sprintf("%s/%s?%s", r.ApiBase, r.Command, argstring)
