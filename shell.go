@@ -333,8 +333,8 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 }
 
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
-	cmdargs := append([]string{root}, args...)
-	resp, err := s.newRequest("object/patch/"+action, cmdargs...).Send(s.httpcli)
+	cmdargs := append([]string{root, action}, args...)
+	resp, err := s.newRequest("object/patch", cmdargs...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -355,9 +355,9 @@ func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 }
 
 func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
-	cmdargs := []string{root, path, childhash}
+	cmdargs := []string{root, "add-link", path, childhash}
 
-	req := s.newRequest("object/patch/add-link", cmdargs...)
+	req := s.newRequest("object/patch", cmdargs...)
 	if create {
 		req.Opts["create"] = "true"
 	}
