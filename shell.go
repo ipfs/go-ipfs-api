@@ -455,6 +455,41 @@ func (s *Shell) PutObject(encoding string, r io.Reader) (string, error) {
 	return out.Hash, nil
 }
 
+type GetObjectJson struct {
+    Data string  `json:"data"`
+    Links []Link `json:"links"`
+}
+
+type Link struct {
+    Hash string `json:"hash"`
+    Name string `json:"name"`
+    Size uint64 `json:"size"`
+}
+
+func (s *Shell) GetObject(hash string) (string, error) {
+	resp, err := s.newRequest("object/get", hash).Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out GetObjectJson
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+	json, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(json), nil
+}
+
 func (s *Shell) ResolvePath(path string) (string, error) {
 	resp, err := s.newRequest("object/stat", path).Send(s.httpcli)
 	if err != nil {
