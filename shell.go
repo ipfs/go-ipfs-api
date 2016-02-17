@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	gohttp "net/http"
 	"os"
+	"time"
 
 	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
@@ -29,6 +30,10 @@ func NewShell(url string) *Shell {
 			},
 		},
 	}
+}
+
+func (s *Shell) SetTimeout(d time.Duration) {
+	s.httpcli.Timeout = d
 }
 
 func (s *Shell) newRequest(command string, args ...string) *Request {
