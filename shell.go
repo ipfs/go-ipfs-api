@@ -3,6 +3,7 @@ package shell
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,8 +11,11 @@ import (
 	"io/ioutil"
 	gohttp "net/http"
 	"os"
+	"strings"
 	"time"
 
+	manet "github.com/jbenet/go-multiaddr-net"
+	ma "github.com/jbenet/go-multiaddr-net/Godeps/_workspace/src/github.com/jbenet/go-multiaddr"
 	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
 )
@@ -22,6 +26,13 @@ type Shell struct {
 }
 
 func NewShell(url string) *Shell {
+	if a, err := ma.NewMultiaddr(url); err == nil {
+		_, host, err := manet.DialArgs(a)
+		if err == nil {
+			url = host
+		}
+	}
+
 	return &Shell{
 		url: url,
 		httpcli: &gohttp.Client{
@@ -340,6 +351,51 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 	cmdargs := append([]string{root}, args...)
 	resp, err := s.newRequest("object/patch/"+action, cmdargs...).Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	dec := json.NewDecoder(resp.Output)
+	var out object
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, nil
+}
+
+func (s *Shell) PatchData(root string, set bool, data interface{}) (string, error) {
+	var read io.Reader
+	switch d := data.(type) {
+	case io.Reader:
+		read = d
+	case []byte:
+		read = bytes.NewReader(d)
+	case string:
+		read = strings.NewReader(d)
+	default:
+		return "", fmt.Errorf("unrecognized type: %#v", data)
+	}
+
+	cmd := "append-data"
+	if set {
+		cmd = "set-data"
+	}
+
+	fr := files.NewReaderFile("", "", ioutil.NopCloser(read), nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("object/patch/"+cmd, root)
+	req.Body = fileReader
+
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
