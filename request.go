@@ -133,13 +133,14 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 }
 
 func (r *Request) getURL() string {
-	argstring := ""
+
+	values := make(url.Values)
 	for _, arg := range r.Args {
-		argstring += fmt.Sprintf("arg=%s&", url.QueryEscape(arg))
+		values.Add("arg", arg)
 	}
 	for k, v := range r.Opts {
-		argstring += fmt.Sprintf("%s=%s&", url.QueryEscape(k), url.QueryEscape(v))
+		values.Add(k, v)
 	}
 
-	return fmt.Sprintf("%s/%s?%s", r.ApiBase, r.Command, argstring)
+	return fmt.Sprintf("%s/%s?%s", r.ApiBase, r.Command, values.Encode())
 }
