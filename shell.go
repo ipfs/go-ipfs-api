@@ -589,13 +589,15 @@ func (s *Shell) BlockPut(block []byte) (string, error) {
 		return "", resp.Error
 	}
 
-	var out object
+	var out struct {
+		Key string
+	}
 	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	return out.Hash, nil
+	return out.Key, nil
 }
 
 type IpfsObject struct {
