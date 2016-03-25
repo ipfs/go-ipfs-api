@@ -556,6 +556,48 @@ func (s *Shell) BlockStat(path string) (string, int, error) {
 	return inf.Key, inf.Size, nil
 }
 
+func (s *Shell) BlockGet(path string) ([]byte, error) {
+	resp, err := s.newRequest("block/get", path).Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	return ioutil.ReadAll(resp.Output)
+}
+
+func (s *Shell) BlockPut(block []byte) (string, error) {
+	data := bytes.NewReader(block)
+	rc := ioutil.NopCloser(data)
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("block/put")
+	req.Body = fileReader
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, nil
+}
+
 type IpfsObject struct {
 	Links []ObjectLink
 	Data  string
