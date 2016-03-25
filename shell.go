@@ -555,3 +555,67 @@ func (s *Shell) BlockStat(path string) (string, int, error) {
 
 	return inf.Key, inf.Size, nil
 }
+
+type IpfsObject struct {
+	Links []ObjectLink
+	Data  string
+}
+
+type ObjectLink struct {
+	Name, Hash string
+	Size       uint64
+}
+
+func (s *Shell) ObjectGet(path string) (*IpfsObject, error) {
+	resp, err := s.newRequest("object/get", path).Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	var obj IpfsObject
+	err = json.NewDecoder(resp.Output).Decode(&obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
+	data := new(bytes.Buffer)
+	err := json.NewEncoder(data).Encode(obj)
+	if err != nil {
+		return "", err
+	}
+
+	rc := ioutil.NopCloser(data)
+
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("object/put")
+	req.Body = fileReader
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, nil
+}
