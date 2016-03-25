@@ -349,8 +349,8 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 }
 
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
-	cmdargs := append([]string{root}, args...)
-	resp, err := s.newRequest("object/patch/"+action, cmdargs...).Send(s.httpcli)
+	cmdargs := append([]string{root, action}, args...)
+	resp, err := s.newRequest("object/patch", cmdargs...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -416,9 +416,9 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 }
 
 func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
-	cmdargs := []string{root, path, childhash}
+	cmdargs := []string{root, "add-link", path, childhash}
 
-	req := s.newRequest("object/patch/add-link", cmdargs...)
+	req := s.newRequest("object/patch", cmdargs...)
 	if create {
 		req.Opts["create"] = "true"
 	}
@@ -554,4 +554,42 @@ func (s *Shell) BlockStat(path string) (string, int, error) {
 	}
 
 	return inf.Key, inf.Size, nil
+}
+
+func (s *Shell) PutBlock(r io.Reader) (string, error) {
+	var rc io.ReadCloser
+	if rclose, ok := r.(io.ReadCloser); ok {
+		rc = rclose
+	} else {
+		rc = ioutil.NopCloser(r)
+	}
+
+	// handler expects an array of files
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := NewRequest(s.url, "block/put")
+	req.Body = fileReader
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var inf struct {
+		Key  string
+		Size int
+	}
+
+	err = json.NewDecoder(resp.Output).Decode(&inf)
+	if err != nil {
+		return "", err
+	}
+
+	return inf.Key, nil
 }

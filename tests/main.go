@@ -8,7 +8,7 @@ import (
 
 	"github.com/ipfs/go-ipfs-api"
 
-	u "github.com/ipfs/go-ipfs/util"
+	u "github.com/ipfs/go-ipfs-util"
 )
 
 var sh *shell.Shell
