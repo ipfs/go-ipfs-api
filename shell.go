@@ -2,7 +2,6 @@
 package shell
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -335,14 +334,21 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 
 	out := make(chan string)
 	go func() {
+		var ref struct {
+			Ref string
+		}
 		defer resp.Close()
-		scan := bufio.NewScanner(resp.Output)
-		for scan.Scan() {
-			if len(scan.Text()) > 0 {
-				out <- scan.Text()
+		defer close(out)
+		dec := json.NewDecoder(resp.Output)
+		for {
+			err := dec.Decode(&ref)
+			if err != nil {
+				return
+			}
+			if len(ref.Ref) > 0 {
+				out <- ref.Ref
 			}
 		}
-		close(out)
 	}()
 
 	return out, nil
