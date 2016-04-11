@@ -345,6 +345,31 @@ func (s *Shell) Refs(hash string, recursive, cached bool, format string) (<-chan
 	return out, nil
 }
 
+func (s *Shell) LocalRefs() (<-chan string, error) {
+	resp, err := s.newRequest("refs/local").Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	out := make(chan string)
+	go func() {
+		defer resp.Close()
+		scan := bufio.NewScanner(resp.Output)
+		for scan.Scan() {
+			if len(scan.Text()) > 0 {
+				out <- scan.Text()
+			}
+		}
+		close(out)
+	}()
+
+	return out, nil
+}
+
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 	cmdargs := append([]string{root, action}, args...)
 	resp, err := s.newRequest("object/patch", cmdargs...).Send(s.httpcli)
