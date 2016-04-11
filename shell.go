@@ -307,10 +307,18 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 	return &str.Responses[0], nil
 }
 
-func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
+func (s *Shell) Refs(hash string, recursive, cached bool, format string) (<-chan string, error) {
 	req := s.newRequest("refs", hash)
 	if recursive {
 		req.Opts["r"] = "true"
+	}
+
+	if cached {
+		req.Opts["cached"] = "true"
+	}
+
+	if format != "" {
+		req.Opts["format"] = format
 	}
 
 	resp, err := req.Send(s.httpcli)
