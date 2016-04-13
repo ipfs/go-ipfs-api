@@ -6,9 +6,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/ipfs/go-ipfs-shell"
+	// The following pkgs pulls the entire ipfs when importing go-ipfs-wrapper to other projects. uncomment these if you are using this programs.
 
-	u "github.com/ipfs/go-ipfs-util"
+	//		"github.com/ipfs/go-ipfs-shell"
+	//		u "github.com/ipfs/go-ipfs-util"
 )
 
 var sh *shell.Shell
