@@ -1,0 +1,20 @@
+{
+  "author": "noffle",
+  "bugs": {},
+  "gx": {
+    "dvcsimport": "github.com/ipfs/go-ipfs-api"
+  },
+  "gxDependencies": [
+    {
+      "author": "jbenet",
+      "hash": "QmPpRcbNUXauP3zWZ1NJMLWpe4QnmEHrd2ba2D3yqWznw7",
+      "name": "go-multiaddr-net",
+      "version": "1.2.0"
+    }
+  ],
+  "gxVersion": "0.7.0",
+  "language": "go",
+  "license": "",
+  "name": "go-ipfs-api",
+  "version": "0.0.0"
+}
