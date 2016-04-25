@@ -57,12 +57,16 @@ func (r *Response) Close() error {
 type Error struct {
 	Command string
 	Message string
+	Code    int
 }
 
 func (e *Error) Error() string {
 	var out string
 	if e.Command != "" {
 		out = e.Command + ": "
+	}
+	if e.Code != 0 {
+		out = fmt.Sprintf("%s%d: ", out, e.Code)
 	}
 	return out + e.Message
 }
@@ -93,24 +97,19 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 
 	nresp.Output = resp.Body
 	if resp.StatusCode >= http.StatusBadRequest {
-		var e *Error
+		e := &Error{
+			Command: r.Command,
+		}
 		switch {
 		case resp.StatusCode == http.StatusNotFound:
-			nresp.Error = &Error{
-				Command: r.Command,
-				Message: "command not found",
-			}
+			e.Message = "command not found"
 		case contentType == "text/plain":
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response read error: %s\n", err)
 			}
-			e = &Error{
-				Command: r.Command,
-				Message: string(out),
-			}
+			e.Message = string(out)
 		case contentType == "application/json":
-			e = new(Error)
 			if err = json.NewDecoder(resp.Body).Decode(e); err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response unmarshall error: %s\n", err)
 			}
@@ -120,10 +119,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: response read error: %s\n", err)
 			}
-			e = &Error{
-				Command: r.Command,
-				Message: fmt.Sprintf("unknown ipfs-shell error encoding: %q - %q", contentType, out),
-			}
+			e.Message = fmt.Sprintf("unknown ipfs-shell error encoding: %q - %q", contentType, out)
 		}
 		nresp.Error = e
 		nresp.Output = nil
@@ -137,13 +133,14 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 }
 
 func (r *Request) getURL() string {
-	argstring := ""
+
+	values := make(url.Values)
 	for _, arg := range r.Args {
-		argstring += fmt.Sprintf("arg=%s&", url.QueryEscape(arg))
+		values.Add("arg", arg)
 	}
 	for k, v := range r.Opts {
-		argstring += fmt.Sprintf("%s=%s&", url.QueryEscape(k), url.QueryEscape(v))
+		values.Add(k, v)
 	}
 
-	return fmt.Sprintf("%s/%s?%s", r.ApiBase, r.Command, argstring)
+	return fmt.Sprintf("%s/%s?%s", r.ApiBase, r.Command, values.Encode())
 }
