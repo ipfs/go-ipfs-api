@@ -2,7 +2,7 @@
 package shell
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,9 +10,13 @@ import (
 	"io/ioutil"
 	gohttp "net/http"
 	"os"
+	"strings"
+	"time"
 
 	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
+	manet "gx/ipfs/QmYVqhVfbK4BKvbW88Lhm26b3ud14sTBvcm1H7uWUx1Fkp/go-multiaddr-net"
+	ma "gx/ipfs/QmcobAGsCjYt5DXoq9et9L8yR8er7o7Cu3DTvpaq12jYSz/go-multiaddr"
 )
 
 type Shell struct {
@@ -21,6 +25,13 @@ type Shell struct {
 }
 
 func NewShell(url string) *Shell {
+	if a, err := ma.NewMultiaddr(url); err == nil {
+		_, host, err := manet.DialArgs(a)
+		if err == nil {
+			url = host
+		}
+	}
+
 	return &Shell{
 		url: url,
 		httpcli: &gohttp.Client{
@@ -29,6 +40,10 @@ func NewShell(url string) *Shell {
 			},
 		},
 	}
+}
+
+func (s *Shell) SetTimeout(d time.Duration) {
+	s.httpcli.Timeout = d
 }
 
 func (s *Shell) newRequest(command string, args ...string) *Request {
@@ -319,14 +334,21 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 
 	out := make(chan string)
 	go func() {
+		var ref struct {
+			Ref string
+		}
 		defer resp.Close()
-		scan := bufio.NewScanner(resp.Output)
-		for scan.Scan() {
-			if len(scan.Text()) > 0 {
-				out <- scan.Text()
+		defer close(out)
+		dec := json.NewDecoder(resp.Output)
+		for {
+			err := dec.Decode(&ref)
+			if err != nil {
+				return
+			}
+			if len(ref.Ref) > 0 {
+				out <- ref.Ref
 			}
 		}
-		close(out)
 	}()
 
 	return out, nil
@@ -335,6 +357,51 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 	cmdargs := append([]string{root}, args...)
 	resp, err := s.newRequest("object/patch/"+action, cmdargs...).Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	dec := json.NewDecoder(resp.Output)
+	var out object
+	err = dec.Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, nil
+}
+
+func (s *Shell) PatchData(root string, set bool, data interface{}) (string, error) {
+	var read io.Reader
+	switch d := data.(type) {
+	case io.Reader:
+		read = d
+	case []byte:
+		read = bytes.NewReader(d)
+	case string:
+		read = strings.NewReader(d)
+	default:
+		return "", fmt.Errorf("unrecognized type: %#v", data)
+	}
+
+	cmd := "append-data"
+	if set {
+		cmd = "set-data"
+	}
+
+	fr := files.NewReaderFile("", "", ioutil.NopCloser(read), nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("object/patch/"+cmd, root)
+	req.Body = fileReader
+
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -421,75 +488,6 @@ func (s *Shell) NewObject(template string) (string, error) {
 	return out.Hash, nil
 }
 
-func (s *Shell) PutObject(encoding string, r io.Reader) (string, error) {
-	var rc io.ReadCloser
-	if rclose, ok := r.(io.ReadCloser); ok {
-		rc = rclose
-	} else {
-		rc = ioutil.NopCloser(r)
-	}
-
-	// handler expects an array of files
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
-
-	req := NewRequest(s.url, "object/put", encoding)
-	req.Body = fileReader
-
-	resp, err := req.Send(s.httpcli)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Close()
-	if resp.Error != nil {
-		return "", resp.Error
-	}
-
-	var out object
-	err = json.NewDecoder(resp.Output).Decode(&out)
-	if err != nil {
-		return "", err
-	}
-
-	return out.Hash, nil
-}
-
-type GetObjectJson struct {
-    Data string  `json:"data"`
-    Links []Link `json:"links"`
-}
-
-type Link struct {
-    Hash string `json:"hash"`
-    Name string `json:"name"`
-    Size uint64 `json:"size"`
-}
-
-func (s *Shell) GetObject(hash string) (string, error) {
-	resp, err := s.newRequest("object/get", hash).Send(s.httpcli)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Close()
-
-	if resp.Error != nil {
-		return "", resp.Error
-	}
-
-	var out GetObjectJson
-	err = json.NewDecoder(resp.Output).Decode(&out)
-	if err != nil {
-		return "", err
-	}
-	json, err := json.Marshal(out)
-	if err != nil {
-		return "", err
-	}
-
-	return string(json), nil
-}
-
 func (s *Shell) ResolvePath(path string) (string, error) {
 	resp, err := s.newRequest("object/stat", path).Send(s.httpcli)
 	if err != nil {
@@ -562,4 +560,112 @@ func (s *Shell) BlockStat(path string) (string, int, error) {
 	}
 
 	return inf.Key, inf.Size, nil
+}
+
+func (s *Shell) BlockGet(path string) ([]byte, error) {
+	resp, err := s.newRequest("block/get", path).Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	return ioutil.ReadAll(resp.Output)
+}
+
+func (s *Shell) BlockPut(block []byte) (string, error) {
+	data := bytes.NewReader(block)
+	rc := ioutil.NopCloser(data)
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("block/put")
+	req.Body = fileReader
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out struct {
+		Key string
+	}
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Key, nil
+}
+
+type IpfsObject struct {
+	Links []ObjectLink
+	Data  string
+}
+
+type ObjectLink struct {
+	Name, Hash string
+	Size       uint64
+}
+
+func (s *Shell) ObjectGet(path string) (*IpfsObject, error) {
+	resp, err := s.newRequest("object/get", path).Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	var obj IpfsObject
+	err = json.NewDecoder(resp.Output).Decode(&obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
+	data := new(bytes.Buffer)
+	err := json.NewEncoder(data).Encode(obj)
+	if err != nil {
+		return "", err
+	}
+
+	rc := ioutil.NopCloser(data)
+
+	fr := files.NewReaderFile("", "", rc, nil)
+	slf := files.NewSliceFile("", "", []files.File{fr})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	req := s.newRequest("object/put")
+	req.Body = fileReader
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var out object
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, nil
 }
