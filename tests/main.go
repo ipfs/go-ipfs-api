@@ -8,7 +8,7 @@ import (
 
 	"github.com/ipfs/go-ipfs-api"
 
-	u "github.com/ipfs/go-ipfs/util"
+	u "github.com/ipfs/go-ipfs-util"
 )
 
 var sh *shell.Shell
@@ -86,7 +86,7 @@ func main() {
 	for i := 0; i < 200; i++ {
 		_, err := makeRandomObject()
 		if err != nil {
-			fmt.Println("errrrrrr: ", err)
+			fmt.Println("err: ", err)
 			return
 		}
 	}
