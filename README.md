@@ -4,6 +4,12 @@
 
 > An unofficial go interface to ipfs's HTTP API
 
+## Installation
+
+	go get -u github.com/ipfs/go-ipfs-api
+
+This will download the source into `$GOPATH/src/github.com/ipfs/go-ipfs-api`.
+
 ## Usage
 
 ...
