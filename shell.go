@@ -120,6 +120,7 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 
 	req := NewRequest(s.url, "add")
 	req.Body = fileReader
+	req.Opts["progress"] = "false"
 
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
