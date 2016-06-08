@@ -22,6 +22,7 @@ import (
 type Shell struct {
 	url     string
 	httpcli *gohttp.Client
+	datafieldenc string
 }
 
 func NewShell(url string) *Shell {
@@ -44,6 +45,10 @@ func NewShell(url string) *Shell {
 
 func (s *Shell) SetTimeout(d time.Duration) {
 	s.httpcli.Timeout = d
+}
+
+func (s *Shell) SetDataFieldEnc(enc string) {
+	s.datafieldenc = enc
 }
 
 func (s *Shell) newRequest(command string, args ...string) *Request {
@@ -651,6 +656,11 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	req := s.newRequest("object/put")
+
+	if len(s.datafieldenc) > 0 {
+		req.Opts["datafieldenc"] = s.datafieldenc
+	}
+
 	req.Body = fileReader
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
