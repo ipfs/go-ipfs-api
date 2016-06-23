@@ -24,8 +24,16 @@ func (s *Shell) Publish(node string, value string) error {
 	return nil
 }
 
+// Resolve gets resolves the string provided to an /ipfs/[hash]. If asked to
+// resolve an empty string, resolve instead resolves the node's own /ipns value.
 func (s *Shell) Resolve(id string) (string, error) {
-	resp, err := s.newRequest("name/resolve", id).Send(s.httpcli)
+	var resp *Response
+	var err error
+	if id != "" {
+		resp, err = s.newRequest("name/resolve", id).Send(s.httpcli)
+	} else {
+		resp, err = s.newRequest("name/resolve").Send(s.httpcli)
+	}
 	if err != nil {
 		return "", err
 	}
