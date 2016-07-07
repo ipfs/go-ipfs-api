@@ -25,6 +25,16 @@ type Shell struct {
 }
 
 func NewShell(url string) *Shell {
+	c := &gohttp.Client{
+		Transport: &gohttp.Transport{
+			DisableKeepAlives: true,
+		},
+	}
+
+	return NewShellWithClient(url, c)
+}
+
+func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	if a, err := ma.NewMultiaddr(url); err == nil {
 		_, host, err := manet.DialArgs(a)
 		if err == nil {
@@ -33,12 +43,8 @@ func NewShell(url string) *Shell {
 	}
 
 	return &Shell{
-		url: url,
-		httpcli: &gohttp.Client{
-			Transport: &gohttp.Transport{
-				DisableKeepAlives: true,
-			},
-		},
+		url:     url,
+		httpcli: c,
 	}
 }
 
