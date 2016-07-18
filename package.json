@@ -1,0 +1,14 @@
+{
+  "author": "ipfs",
+  "bugs": {
+    "url": "https://github.com/ipfs/go-ipfs-api/issues"
+  },
+  "gx": {
+    "dvcsimport": "github.com/ipfs/go-ipfs-api"
+  },
+  "gxVersion": "0.7.0",
+  "language": "go",
+  "license": "MIT",
+  "name": "go-ipfs-api",
+  "version": "1.0.0"
+}
