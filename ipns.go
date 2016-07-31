@@ -24,16 +24,33 @@ func (s *Shell) Publish(node string, value string) error {
 	return nil
 }
 
-// Resolve gets resolves the string provided to an /ipfs/[hash]. If asked to
+// Resolve resolves the string provided to an /ipfs/[hash]. If asked to
 // resolve an empty string, resolve instead resolves the node's own /ipns value.
 func (s *Shell) Resolve(id string) (string, error) {
-	var resp *Response
-	var err error
+	return s.resolve(id, false)
+}
+
+// ResolveFresh resolves the string provided to an /ipfs/[hash] without looking
+// at the cache. If asked to resolve an empty string, ResolveFresh instead
+// resolves the node's own /ipns value.
+func (s *Shell) ResolveFresh(id string) (string, error) {
+	return s.resolve(id, true)
+}
+
+func (s *Shell) resolve(id string, nocache bool) (string, error) {
+	var req *Request
 	if id != "" {
-		resp, err = s.newRequest("name/resolve", id).Send(s.httpcli)
+		req = s.newRequest("name/resolve", id)
 	} else {
-		resp, err = s.newRequest("name/resolve").Send(s.httpcli)
+		req = s.newRequest("name/resolve")
 	}
+
+	if nocache {
+		req.Opts["nocache"] = "true"
+	}
+	// false is the default
+
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
