@@ -676,3 +676,24 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 	return out.Hash, nil
 }
+
+func (s *Shell) DiagNet(format string) ([]byte, error) {
+	var result = new(bytes.Buffer)
+
+	req := s.newRequest("diag/net")
+	req.Opts["vis"] = format
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	defer resp.Close()
+	if resp.Error != nil {
+		return []byte{}, resp.Error
+	}
+
+	result.ReadFrom(resp.Output)
+
+	return result.Bytes(), nil
+}
