@@ -112,6 +112,15 @@ type object struct {
 
 // Add a file to ipfs from the given reader, returns the hash of the added file
 func (s *Shell) Add(r io.Reader) (string, error) {
+	return s.addWithOpts(r, true)
+}
+
+// AddNoPin a file to ipfs from the given reader, returns the hash of the added file without pinning the file
+func (s *Shell) AddNoPin(r io.Reader) (string, error) {
+	return s.addWithOpts(r, false)
+}
+
+func (s *Shell) addWithOpts(r io.Reader, pin bool) (string, error) {
 	var rc io.ReadCloser
 	if rclose, ok := r.(io.ReadCloser); ok {
 		rc = rclose
@@ -127,6 +136,9 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 	req := NewRequest(s.url, "add")
 	req.Body = fileReader
 	req.Opts["progress"] = "false"
+	if !pin {
+		req.Opts["pin"] = "false"
+	}
 
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
