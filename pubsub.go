@@ -3,7 +3,7 @@ package shell
 import (
 	"encoding/base64"
 	"encoding/json"
-	"sync"
+	//	"sync"
 )
 
 type b64String string
@@ -42,27 +42,35 @@ type PubSubRecord struct {
 ///
 
 type Subscription struct {
-	topic string
-	ch    chan *PubSubRecord
+	resp *Response
 }
 
-func newSubscription(topic string, ch chan *PubSubRecord) *Subscription {
+func newSubscription(resp *Response) *Subscription {
 	return &Subscription{
-		topic: topic,
-		ch:    ch,
+		resp: resp,
 	}
 }
 
-func (s *Subscription) Next() *PubSubRecord {
-	return <-s.ch
+func (s *Subscription) Next() (*PubSubRecord, error) {
+	if s.resp.Error != nil {
+		return nil, s.resp.Error
+	}
+
+	d := json.NewDecoder(s.resp.Output)
+
+	r := &PubSubRecord{}
+	err := d.Decode(r)
+
+	return r, err
 }
 
-func (s *Subscription) Topic() string {
-	return s.topic
+func (s *Subscription) Cancel() error {
+	return s.resp.Output.Close()
 }
 
 ///
 
+/*
 type subscriptionHandler struct {
 	topic string
 	resp  *Response
@@ -154,7 +162,7 @@ L:
 		close(rdCh)
 	}
 
-	sh.resp.Output.Close()
+	//sh.resp.Output.Close()
 	sh = nil
 }
 
@@ -234,3 +242,4 @@ func (sm *subscriptionManager) dropHandler(sh *subscriptionHandler) {
 
 	delete(sm.subs, sh.topic)
 }
+*/

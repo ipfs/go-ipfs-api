@@ -23,7 +23,7 @@ type Shell struct {
 	url     string
 	httpcli *gohttp.Client
 
-	sm *subscriptionManager
+	//sm *subscriptionManager
 }
 
 func NewShell(url string) *Shell {
@@ -34,7 +34,7 @@ func NewShell(url string) *Shell {
 	}
 
 	s := NewShellWithClient(url, c)
-	s.sm = newSubscriptionManager(s)
+	//s.sm = newSubscriptionManager(s)
 
 	return s
 }
@@ -695,11 +695,15 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 }
 
 func (s *Shell) PubSubSubscribe(topic string) (*Subscription, error) {
-	return s.sm.Sub(topic)
-}
+	// connect
+	req := s.newRequest("pubsub/sub", topic)
 
-func (s *Shell) PubSubCancelSubscription(sub *Subscription) {
-	s.sm.Drop(sub)
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSubscription(resp), nil
 }
 
 func (s *Shell) PubSubPublish(topic, data string) error {
