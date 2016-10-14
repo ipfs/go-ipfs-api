@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/cheekybits/is"
 )
@@ -115,4 +116,43 @@ func TestResolvePath(t *testing.T) {
 	childHash, err := s.ResolvePath(fmt.Sprintf("/ipfs/%s/about", examplesHash))
 	is.Nil(err)
 	is.Equal(childHash, "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V")
+}
+
+func TestPubSub(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	var (
+		sub   *Subscription
+		err   error
+		wait1 <-chan time.Time
+		wait  = make(chan struct{})
+	)
+
+	go func() {
+		wait1 = time.After(time.Second)
+		wait <- struct{}{}
+		t.Log("subscribing...")
+		sub, err = s.PubSubSubscribe("test")
+		is.Nil(err)
+		t.Log("sub: done")
+
+		wait <- struct{}{}
+	}()
+
+	<-wait
+	<-wait1
+
+	t.Log("publishing...")
+	is.Nil(s.PubSubPublish("test", "Hello World!"))
+	t.Log("pub: done")
+
+	<-wait
+
+	t.Log("next()...")
+	r := sub.Next()
+	t.Log("next: done. ")
+
+	is.NotNil(r)
+	is.Equal(r.Data, "Hello World!")
 }
