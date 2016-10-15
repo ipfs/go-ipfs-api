@@ -39,19 +39,23 @@ type PubSubRecord struct {
 	TopicIDs []string  `json:"topicIDs"`
 }
 
+func (r PubSubRecord) DataString() string {
+	return string(r.Data)
+}
+
 ///
 
-type Subscription struct {
+type PubSubSubscription struct {
 	resp *Response
 }
 
-func newSubscription(resp *Response) *Subscription {
-	return &Subscription{
+func newPubSubSubscription(resp *Response) *PubSubSubscription {
+	return &PubSubSubscription{
 		resp: resp,
 	}
 }
 
-func (s *Subscription) Next() (*PubSubRecord, error) {
+func (s *PubSubSubscription) Next() (*PubSubRecord, error) {
 	if s.resp.Error != nil {
 		return nil, s.resp.Error
 	}
@@ -64,7 +68,11 @@ func (s *Subscription) Next() (*PubSubRecord, error) {
 	return r, err
 }
 
-func (s *Subscription) Cancel() error {
+func (s *PubSubSubscription) Cancel() error {
+	if s.resp.Output == nil {
+		return nil
+	}
+
 	return s.resp.Output.Close()
 }
 
@@ -83,7 +91,7 @@ type subscriptionHandler struct {
 	failReason error
 }
 
-func newSubscriptionHandler(topic string, resp *Response) *subscriptionHandler {
+func newPubSubSubscriptionHandler(topic string, resp *Response) *subscriptionHandler {
 	sh := &subscriptionHandler{
 		// the topic that is being handled
 		topic: topic,
@@ -170,15 +178,15 @@ func (sh *subscriptionHandler) Stop() {
 	sh.stop <- struct{}{}
 }
 
-func (sh *subscriptionHandler) Sub() *Subscription {
+func (sh *subscriptionHandler) Sub() *PubSubSubscription {
 	ch := make(chan *PubSubRecord)
 
 	sh.add <- ch
 
-	return newSubscription(sh.topic, ch)
+	return newPubSubSubscription(sh.topic, ch)
 }
 
-func (sh *subscriptionHandler) Drop(s *Subscription) {
+func (sh *subscriptionHandler) Drop(s *PubSubSubscription) {
 	sh.drop <- s.ch
 }
 
@@ -195,14 +203,14 @@ type subscriptionManager struct {
 	subs map[string]*subscriptionHandler
 }
 
-func newSubscriptionManager(s *Shell) *subscriptionManager {
+func newPubSubSubscriptionManager(s *Shell) *subscriptionManager {
 	return &subscriptionManager{
 		s:    s,
 		subs: make(map[string]*subscriptionHandler),
 	}
 }
 
-func (sm *subscriptionManager) Sub(topic string) (*Subscription, error) {
+func (sm *subscriptionManager) Sub(topic string) (*PubSubSubscription, error) {
 	// lock
 	sm.Lock()
 	defer sm.Unlock()
@@ -218,7 +226,7 @@ func (sm *subscriptionManager) Sub(topic string) (*Subscription, error) {
 		}
 
 		// pass connection to handler and add handler to manager
-		sh = newSubscriptionHandler(topic, resp)
+		sh = newPubSubSubscriptionHandler(topic, resp)
 		sm.subs[topic] = sh
 	}
 
@@ -226,7 +234,7 @@ func (sm *subscriptionManager) Sub(topic string) (*Subscription, error) {
 	return sh.Sub(), nil
 }
 
-func (sm *subscriptionManager) Drop(s *Subscription) {
+func (sm *subscriptionManager) Drop(s *PubSubSubscription) {
 	sm.Lock()
 	defer sm.Unlock()
 

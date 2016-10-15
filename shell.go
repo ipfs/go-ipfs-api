@@ -22,8 +22,6 @@ import (
 type Shell struct {
 	url     string
 	httpcli *gohttp.Client
-
-	//sm *subscriptionManager
 }
 
 func NewShell(url string) *Shell {
@@ -34,7 +32,7 @@ func NewShell(url string) *Shell {
 	}
 
 	s := NewShellWithClient(url, c)
-	//s.sm = newSubscriptionManager(s)
+	//s.sm = newPubSubSubscriptionManager(s)
 
 	return s
 }
@@ -694,7 +692,7 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 	return out.Hash, nil
 }
 
-func (s *Shell) PubSubSubscribe(topic string) (*Subscription, error) {
+func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 	// connect
 	req := s.newRequest("pubsub/sub", topic)
 
@@ -703,16 +701,16 @@ func (s *Shell) PubSubSubscribe(topic string) (*Subscription, error) {
 		return nil, err
 	}
 
-	return newSubscription(resp), nil
+	return newPubSubSubscription(resp), nil
 }
 
 func (s *Shell) PubSubPublish(topic, data string) error {
-	resp, err := s.newRequest("pubsub/pub", topic, data).Send(s.httpcli)
+	_, err := s.newRequest("pubsub/pub", topic, data).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
 
-	return resp.Error
+	return nil
 }
 
 func (s *Shell) DiagNet(format string) ([]byte, error) {
