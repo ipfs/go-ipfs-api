@@ -31,10 +31,7 @@ func NewShell(url string) *Shell {
 		},
 	}
 
-	s := NewShellWithClient(url, c)
-	//s.sm = newPubSubSubscriptionManager(s)
-
-	return s
+	return NewShellWithClient(url, c)
 }
 
 func NewShellWithClient(url string, c *gohttp.Client) *Shell {

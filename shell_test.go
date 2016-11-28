@@ -125,32 +125,21 @@ func TestPubSub(t *testing.T) {
 	var (
 		topic = "test"
 
-		sub   *Subscription
-		err   error
-		wait1 <-chan time.Time
-		wait  = make(chan struct{})
+		sub *PubSubSubscription
+		err error
 	)
 
-	go func() {
-		wait1 = time.After(20 * time.Millisecond) // workaround for go-ipfs#3304
-		wait <- struct{}{}
-		t.Log("subscribing...")
-		sub, err = s.PubSubSubscribe(topic)
-		is.Nil(err)
-		is.NotNil(sub)
-		t.Log("sub: done")
+	t.Log("subscribing...")
+	sub, err = s.PubSubSubscribe(topic)
+	is.Nil(err)
+	is.NotNil(sub)
+	t.Log("sub: done")
 
-		wait <- struct{}{}
-	}()
-
-	<-wait
-	<-wait1
+	time.Sleep(10 * time.Millisecond)
 
 	t.Log("publishing...")
 	is.Nil(s.PubSubPublish(topic, "Hello World!"))
 	t.Log("pub: done")
-
-	<-wait
 
 	t.Log("next()...")
 	r, err := sub.Next()
@@ -158,7 +147,7 @@ func TestPubSub(t *testing.T) {
 
 	is.NotNil(r)
 	is.Nil(err)
-	is.Equal(r.Data, "Hello World!")
+	is.Equal(r.DataString(), "Hello World!")
 
 	sub2, err := s.PubSubSubscribe(topic)
 	is.Nil(err)
@@ -166,9 +155,10 @@ func TestPubSub(t *testing.T) {
 
 	is.Nil(s.PubSubPublish(topic, "Hallo Welt!"))
 
-	r, err = sub2.Next() // duplicate subscription error
-	is.NotNil(err)
-	is.Nil(r)
+	r, err = sub2.Next()
+	is.Nil(err)
+	is.NotNil(r)
+	is.Equal(r.Data, "Hallo Welt!")
 
 	r, err = sub.Next()
 	is.NotNil(r)
