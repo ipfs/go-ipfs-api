@@ -145,8 +145,8 @@ func TestPubSub(t *testing.T) {
 	r, err := sub.Next()
 	t.Log("next: done. ")
 
-	is.NotNil(r)
 	is.Nil(err)
+	is.NotNil(r)
 	is.Equal(r.DataString(), "Hello World!")
 
 	sub2, err := s.PubSubSubscribe(topic)
