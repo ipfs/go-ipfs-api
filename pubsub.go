@@ -1,50 +1,46 @@
 package shell
 
 import (
-	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
+
+	"github.com/libp2p/go-floodsub"
+	"github.com/libp2p/go-libp2p-peer"
 )
 
-// floodsub uses base64 encoding for just about everything.
-// To Decode the base64 while also decoding the JSON the type b64String was added.
-type b64String string
-
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (bs *b64String) UnmarshalJSON(in []byte) error {
-	var b64 string
-
-	err := json.Unmarshal(in, &b64)
-	if err != nil {
-		return err
-	}
-
-	bsStr, err := base64.StdEncoding.DecodeString(b64)
-
-	*bs = b64String(bsStr)
-	return err
-}
-
-func (bs *b64String) Marshal() (string, error) {
-	jsonBytes, err := json.Marshal(
-		base64.StdEncoding.EncodeToString(
-			[]byte(*bs)))
-
-	return string(jsonBytes), err
-}
-
-///
-
 // PubSubRecord is a record received via PubSub.
-type PubSubRecord struct {
-	From     string    `json:"from"`
-	Data     b64String `json:"data"`
-	SeqNo    b64String `json:"seqno"`
-	TopicIDs []string  `json:"topicIDs"`
+type PubSubRecord interface {
+	// From returns the peer ID of the node that published this record
+	From() peer.ID
+
+	// Data returns the data field
+	Data() []byte
+
+	// SeqNo is the sequence number of this record
+	SeqNo() int64
+
+	//TopicIDs is the list of topics this record belongs to
+	TopicIDs() []string
 }
 
-// DataString returns the string representation of the data field.
-func (r PubSubRecord) DataString() string {
-	return string(r.Data)
+type floodsubRecord struct {
+	msg *floodsub.Message
+}
+
+func (r floodsubRecord) From() peer.ID {
+	return r.msg.GetFrom()
+}
+
+func (r floodsubRecord) Data() []byte {
+	return r.msg.GetData()
+}
+
+func (r floodsubRecord) SeqNo() int64 {
+	return int64(binary.BigEndian.Uint64(r.msg.GetSeqno()))
+}
+
+func (r floodsubRecord) TopicIDs() []string {
+	return r.msg.GetTopicIDs()
 }
 
 ///
@@ -64,17 +60,17 @@ func newPubSubSubscription(resp *Response) *PubSubSubscription {
 }
 
 // Next waits for the next record and returns that.
-func (s *PubSubSubscription) Next() (*PubSubRecord, error) {
+func (s *PubSubSubscription) Next() (PubSubRecord, error) {
 	if s.resp.Error != nil {
 		return nil, s.resp.Error
 	}
 
 	d := json.NewDecoder(s.resp.Output)
 
-	r := &PubSubRecord{}
+	r := &floodsub.Message{}
 	err := d.Decode(r)
 
-	return r, err
+	return floodsubRecord{msg: r}, err
 }
 
 // Cancel cancels the given subscription.
