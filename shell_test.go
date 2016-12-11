@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/cheekybits/is"
 )
@@ -115,4 +116,54 @@ func TestResolvePath(t *testing.T) {
 	childHash, err := s.ResolvePath(fmt.Sprintf("/ipfs/%s/about", examplesHash))
 	is.Nil(err)
 	is.Equal(childHash, "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V")
+}
+
+func TestPubSub(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	var (
+		topic = "test"
+
+		sub *PubSubSubscription
+		err error
+	)
+
+	t.Log("subscribing...")
+	sub, err = s.PubSubSubscribe(topic)
+	is.Nil(err)
+	is.NotNil(sub)
+	t.Log("sub: done")
+
+	time.Sleep(10 * time.Millisecond)
+
+	t.Log("publishing...")
+	is.Nil(s.PubSubPublish(topic, "Hello World!"))
+	t.Log("pub: done")
+
+	t.Log("next()...")
+	r, err := sub.Next()
+	t.Log("next: done. ")
+
+	is.Nil(err)
+	is.NotNil(r)
+	is.Equal(r.Data(), "Hello World!")
+
+	sub2, err := s.PubSubSubscribe(topic)
+	is.Nil(err)
+	is.NotNil(sub2)
+
+	is.Nil(s.PubSubPublish(topic, "Hallo Welt!"))
+
+	r, err = sub2.Next()
+	is.Nil(err)
+	is.NotNil(r)
+	is.Equal(r.Data(), "Hallo Welt!")
+
+	r, err = sub.Next()
+	is.NotNil(r)
+	is.Nil(err)
+	is.Equal(r.Data(), "Hallo Welt!")
+
+	is.Nil(sub.Cancel())
 }

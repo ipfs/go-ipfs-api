@@ -689,6 +689,27 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 	return out.Hash, nil
 }
 
+func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
+	// connect
+	req := s.newRequest("pubsub/sub", topic)
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+
+	return newPubSubSubscription(resp), nil
+}
+
+func (s *Shell) PubSubPublish(topic, data string) error {
+	_, err := s.newRequest("pubsub/pub", topic, data).Send(s.httpcli)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Shell) DiagNet(format string) ([]byte, error) {
 	var result = new(bytes.Buffer)
 
