@@ -6,9 +6,18 @@
   "gx": {
     "dvcsimport": "github.com/ipfs/go-ipfs-api"
   },
+  "gxDependencies": [
+    {
+      "author": "whyrusleeping",
+      "hash": "QmV5jot2GfVXmgvetHExJCa2hprebf3AKjprZtuwaXSr1v",
+      "name": "floodsub",
+      "version": "0.8.2"
+    }
+  ],
   "gxVersion": "0.7.0",
   "language": "go",
   "license": "MIT",
   "name": "go-ipfs-api",
   "version": "1.0.0"
 }
+
