@@ -8,10 +8,10 @@ import (
 	files "github.com/whyrusleeping/go-multipart-files"
 )
 
-func (s *Shell) DagPut(data, kind string) (string, error) {
+func (s *Shell) DagPut(data, ienc, kind string) (string, error) {
 	req := s.newRequest("dag/put")
 	req.Opts = map[string]string{
-		"input-enc": "hex",
+		"input-enc": ienc,
 		"format":    kind,
 	}
 
@@ -34,7 +34,7 @@ func (s *Shell) DagPut(data, kind string) (string, error) {
 
 	var out struct {
 		Cid struct {
-			Ref string `json:"/"`
+			Target string `json:"/"`
 		}
 	}
 	err = json.NewDecoder(resp.Output).Decode(&out)
@@ -42,5 +42,5 @@ func (s *Shell) DagPut(data, kind string) (string, error) {
 		return "", err
 	}
 
-	return out.Cid.Ref, nil
+	return out.Cid.Target, nil
 }
