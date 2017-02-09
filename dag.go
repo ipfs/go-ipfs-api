@@ -1,21 +1,51 @@
 package shell
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"strings"
 
 	files "github.com/whyrusleeping/go-multipart-files"
 )
 
-func (s *Shell) DagPut(data, ienc, kind string) (string, error) {
+func (s *Shell) DagGet(ref string, out interface{}) error {
+	req := s.newRequest("dag/get")
+	req.Args = []string{ref}
+
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return resp.Error
+	}
+
+	return json.NewDecoder(resp.Output).Decode(out)
+}
+
+func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
 	req := s.newRequest("dag/put")
 	req.Opts = map[string]string{
 		"input-enc": ienc,
 		"format":    kind,
 	}
 
-	r := strings.NewReader(data)
+	var r io.Reader
+	switch data := data.(type) {
+	case string:
+		r = strings.NewReader(data)
+	case []byte:
+		r = bytes.NewReader(data)
+	case io.Reader:
+		r = data
+	default:
+		return "", fmt.Errorf("cannot current handle putting values of type %T", data)
+	}
 	rc := ioutil.NopCloser(r)
 	fr := files.NewReaderFile("", "", rc, nil)
 	slf := files.NewSliceFile("", "", []files.File{fr})
