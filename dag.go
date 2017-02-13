@@ -63,14 +63,13 @@ func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
 	}
 
 	var out struct {
-		Cid struct {
-			Target string `json:"/"`
-		}
+		Cid string `json:"Cid"`
 	}
+
 	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	return out.Cid.Target, nil
+	return out.Cid, nil
 }
