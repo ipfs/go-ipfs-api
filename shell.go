@@ -307,6 +307,41 @@ func (s *Shell) Unpin(path string) error {
 	return nil
 }
 
+const (
+	DirectPin    = "direct"
+	RecursivePin = "recursive"
+	IndirectPin  = "indirect"
+)
+
+type PinInfo struct {
+	Type string
+}
+
+// Pins returns a map of the pin hashes to their info (currently just the
+// pin type, one of DirectPin, RecursivePin, or IndirectPin. A map is returned
+// instead of a slice because it is easier to do existence lookup by map key
+// than unordered array searching. The map is likely to be more useful to a
+// client than a flat list.
+func (s *Shell) Pins() (map[string]PinInfo, error) {
+	resp, err := s.newRequest("pin/ls").Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	raw := struct{ Keys map[string]PinInfo }{}
+	err = json.NewDecoder(resp.Output).Decode(&raw)
+	if err != nil {
+		return nil, err
+	}
+
+	return raw.Keys, nil
+}
+
 type PeerInfo struct {
 	Addrs []string
 	ID    string
