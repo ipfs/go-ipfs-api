@@ -201,3 +201,14 @@ func TestPubSub(t *testing.T) {
 
 	is.Nil(sub.Cancel())
 }
+
+func TestObjectStat(t *testing.T) {
+	obj := "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V"
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	stat, err := s.ObjectStat("QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V")
+	is.Nil(err)
+	is.Equal(stat.Hash, obj)
+	is.Equal(stat.LinksSize, 3)
+	is.Equal(stat.CumulativeSize, 1688)
+}

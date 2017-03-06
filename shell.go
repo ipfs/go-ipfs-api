@@ -745,6 +745,38 @@ func (s *Shell) PubSubPublish(topic, data string) error {
 	return nil
 }
 
+type ObjectStats struct {
+	Hash           string
+	BlockSize      int
+	CumulativeSize int
+	DataSize       int
+	LinksSize      int
+	NumLinks       int
+}
+
+// ObjectStat gets stats for the DAG object named by key. It returns
+// the stats of the requested Object or an error.
+func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
+	resp, err := s.newRequest("object/stat", key).Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	stat := &ObjectStats{}
+
+	err = json.NewDecoder(resp.Output).Decode(stat)
+	if err != nil {
+		return nil, err
+	}
+
+	return stat, nil
+}
+
 func (s *Shell) DiagNet(format string) ([]byte, error) {
 	var result = new(bytes.Buffer)
 
