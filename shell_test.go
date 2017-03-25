@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io"
@@ -211,4 +212,19 @@ func TestObjectStat(t *testing.T) {
 	is.Equal(stat.Hash, obj)
 	is.Equal(stat.LinksSize, 3)
 	is.Equal(stat.CumulativeSize, 1688)
+}
+
+func TestFindProvs(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, err := s.FindProvs(ctx, "Qme1g4e3m2SmdiSGGU3vSWmUStwUjc5oECnEriaK9Xa1HU")
+	is.Nil(err)
+
+	p := <-c
+	t.Logf("prov: %s", p)
+	is.NotNil(p)
+	is.NotNil(p.ID)
 }
