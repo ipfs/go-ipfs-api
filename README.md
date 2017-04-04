@@ -6,6 +6,7 @@
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 [![GoDoc](https://godoc.org/github.com/ipfs/go-ipfs-api?status.svg)](https://godoc.org/github.com/ipfs/go-ipfs-api)
 [![Build Status](https://travis-ci.org/ipfs/go-ipfs-api.svg)](https://travis-ci.org/ipfs/go-ipfs-api) 
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fipfs%2Fgo-ipfs-api.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fipfs%2Fgo-ipfs-api?ref=badge_shield)
 
 > An unofficial go interface to ipfs's HTTP API
 
@@ -32,3 +33,5 @@ Contributions are welcome! Please check out the [issues](https://github.com/ipfs
 ## License
 
 MIT
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fipfs%2Fgo-ipfs-api.svg?type=large)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fipfs%2Fgo-ipfs-api?ref=badge_large)
