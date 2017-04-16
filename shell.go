@@ -3,6 +3,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,8 +53,8 @@ func (s *Shell) SetTimeout(d time.Duration) {
 	s.httpcli.Timeout = d
 }
 
-func (s *Shell) newRequest(command string, args ...string) *Request {
-	return NewRequest(s.url, command, args...)
+func (s *Shell) newRequest(ctx context.Context, command string, args ...string) *Request {
+	return NewRequest(ctx, s.url, command, args...)
 }
 
 type IdOutput struct {
@@ -73,7 +74,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 		return nil, fmt.Errorf("Too many peer arguments")
 	}
 
-	resp, err := NewRequest(s.url, "id", peer...).Send(s.httpcli)
+	resp, err := NewRequest(context.Background(), s.url, "id", peer...).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 
 // Cat the content at the given path. Callers need to drain and close the returned reader after usage.
 func (s *Shell) Cat(path string) (io.ReadCloser, error) {
-	resp, err := NewRequest(s.url, "cat", path).Send(s.httpcli)
+	resp, err := NewRequest(context.Background(), s.url, "cat", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func (s *Shell) addWithOpts(r io.Reader, pin bool) (string, error) {
 	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
-	req := NewRequest(s.url, "add")
+	req := NewRequest(context.Background(), s.url, "add")
 	req.Body = fileReader
 	req.Opts["progress"] = "false"
 	if !pin {
@@ -163,7 +164,7 @@ func (s *Shell) AddLink(target string) (string, error) {
 	slf := files.NewSliceFile("", "", []files.File{link})
 	reader := files.NewMultiFileReader(slf, true)
 
-	req := s.newRequest("add")
+	req := s.newRequest(context.Background(), "add")
 	req.Body = reader
 
 	resp, err := req.Send(s.httpcli)
@@ -198,7 +199,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	slf := files.NewSliceFile("", dir, []files.File{sf})
 	reader := files.NewMultiFileReader(slf, true)
 
-	req := NewRequest(s.url, "add")
+	req := NewRequest(context.Background(), s.url, "add")
 	req.Opts["r"] = "true"
 	req.Body = reader
 
@@ -242,7 +243,7 @@ const (
 
 // List entries at the given path
 func (s *Shell) List(path string) ([]*LsLink, error) {
-	resp, err := NewRequest(s.url, "ls", path).Send(s.httpcli)
+	resp, err := NewRequest(context.Background(), s.url, "ls", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +276,7 @@ type LsObject struct {
 
 // Pin the given path
 func (s *Shell) Pin(path string) error {
-	req := NewRequest(s.url, "pin/add", path)
+	req := NewRequest(context.Background(), s.url, "pin/add", path)
 	req.Opts["r"] = "true"
 
 	resp, err := req.Send(s.httpcli)
@@ -292,7 +293,7 @@ func (s *Shell) Pin(path string) error {
 
 // Unpin the given path
 func (s *Shell) Unpin(path string) error {
-	req := NewRequest(s.url, "pin/rm", path)
+	req := NewRequest(context.Background(), s.url, "pin/rm", path)
 	req.Opts["r"] = "true"
 
 	resp, err := req.Send(s.httpcli)
@@ -323,7 +324,7 @@ type PinInfo struct {
 // than unordered array searching. The map is likely to be more useful to a
 // client than a flat list.
 func (s *Shell) Pins() (map[string]PinInfo, error) {
-	resp, err := s.newRequest("pin/ls").Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "pin/ls").Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +349,7 @@ type PeerInfo struct {
 }
 
 func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
-	resp, err := s.newRequest("dht/findpeer", peer).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "dht/findpeer", peer).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +373,7 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 }
 
 func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
-	req := s.newRequest("refs", hash)
+	req := s.newRequest(context.Background(), "refs", hash)
 	if recursive {
 		req.Opts["r"] = "true"
 	}
@@ -410,7 +411,7 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 
 func (s *Shell) Patch(root, action string, args ...string) (string, error) {
 	cmdargs := append([]string{root}, args...)
-	resp, err := s.newRequest("object/patch/"+action, cmdargs...).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "object/patch/"+action, cmdargs...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -452,7 +453,7 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
-	req := s.newRequest("object/patch/"+cmd, root)
+	req := s.newRequest(context.Background(), "object/patch/"+cmd, root)
 	req.Body = fileReader
 
 	resp, err := req.Send(s.httpcli)
@@ -478,7 +479,7 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
 	cmdargs := []string{root, path, childhash}
 
-	req := s.newRequest("object/patch/add-link", cmdargs...)
+	req := s.newRequest(context.Background(), "object/patch/add-link", cmdargs...)
 	if create {
 		req.Opts["create"] = "true"
 	}
@@ -503,7 +504,7 @@ func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, er
 }
 
 func (s *Shell) Get(hash, outdir string) error {
-	resp, err := s.newRequest("get", hash).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "get", hash).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
@@ -523,7 +524,7 @@ func (s *Shell) NewObject(template string) (string, error) {
 		args = []string{template}
 	}
 
-	resp, err := s.newRequest("object/new", args...).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "object/new", args...).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -543,7 +544,7 @@ func (s *Shell) NewObject(template string) (string, error) {
 }
 
 func (s *Shell) ResolvePath(path string) (string, error) {
-	resp, err := s.newRequest("object/stat", path).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "object/stat", path).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -564,7 +565,7 @@ func (s *Shell) ResolvePath(path string) (string, error) {
 
 // returns ipfs version and commit sha
 func (s *Shell) Version() (string, string, error) {
-	resp, err := s.newRequest("version").Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "version").Send(s.httpcli)
 	if err != nil {
 		return "", "", err
 	}
@@ -593,7 +594,7 @@ func (s *Shell) IsUp() bool {
 }
 
 func (s *Shell) BlockStat(path string) (string, int, error) {
-	resp, err := s.newRequest("block/stat", path).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "block/stat", path).Send(s.httpcli)
 	if err != nil {
 		return "", 0, err
 	}
@@ -617,7 +618,7 @@ func (s *Shell) BlockStat(path string) (string, int, error) {
 }
 
 func (s *Shell) BlockGet(path string) ([]byte, error) {
-	resp, err := s.newRequest("block/get", path).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "block/get", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -637,7 +638,7 @@ func (s *Shell) BlockPut(block []byte) (string, error) {
 	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
-	req := s.newRequest("block/put")
+	req := s.newRequest(context.Background(), "block/put")
 	req.Body = fileReader
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
@@ -671,7 +672,7 @@ type ObjectLink struct {
 }
 
 func (s *Shell) ObjectGet(path string) (*IpfsObject, error) {
-	resp, err := s.newRequest("object/get", path).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "object/get", path).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +704,7 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
-	req := s.newRequest("object/put")
+	req := s.newRequest(context.Background(), "object/put")
 	req.Body = fileReader
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
@@ -726,7 +727,7 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 	// connect
-	req := s.newRequest("pubsub/sub", topic)
+	req := s.newRequest(context.Background(), "pubsub/sub", topic)
 
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
@@ -737,7 +738,7 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 }
 
 func (s *Shell) PubSubPublish(topic, data string) error {
-	_, err := s.newRequest("pubsub/pub", topic, data).Send(s.httpcli)
+	_, err := s.newRequest(context.Background(), "pubsub/pub", topic, data).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
@@ -757,7 +758,7 @@ type ObjectStats struct {
 // ObjectStat gets stats for the DAG object named by key. It returns
 // the stats of the requested Object or an error.
 func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
-	resp, err := s.newRequest("object/stat", key).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "object/stat", key).Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
@@ -780,7 +781,7 @@ func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
 func (s *Shell) DiagNet(format string) ([]byte, error) {
 	var result = new(bytes.Buffer)
 
-	req := s.newRequest("diag/net")
+	req := s.newRequest(context.Background(), "diag/net")
 	req.Opts["vis"] = format
 
 	resp, err := req.Send(s.httpcli)

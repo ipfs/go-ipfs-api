@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"context"
 	"encoding/json"
 )
 
@@ -11,7 +12,7 @@ func (s *Shell) Publish(node string, value string) error {
 		args = []string{node, value}
 	}
 
-	resp, err := s.newRequest("name/publish", args...).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "name/publish", args...).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
@@ -30,9 +31,9 @@ func (s *Shell) Resolve(id string) (string, error) {
 	var resp *Response
 	var err error
 	if id != "" {
-		resp, err = s.newRequest("name/resolve", id).Send(s.httpcli)
+		resp, err = s.newRequest(context.Background(), "name/resolve", id).Send(s.httpcli)
 	} else {
-		resp, err = s.newRequest("name/resolve").Send(s.httpcli)
+		resp, err = s.newRequest(context.Background(), "name/resolve").Send(s.httpcli)
 	}
 	if err != nil {
 		return "", err

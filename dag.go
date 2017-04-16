@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {
-	req := s.newRequest("dag/get")
+	req := s.newRequest(context.Background(), "dag/get")
 	req.Args = []string{ref}
 
 	resp, err := req.Send(s.httpcli)
@@ -29,7 +30,7 @@ func (s *Shell) DagGet(ref string, out interface{}) error {
 }
 
 func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
-	req := s.newRequest("dag/put")
+	req := s.newRequest(context.Background(), "dag/put")
 	req.Opts = map[string]string{
 		"input-enc": ienc,
 		"format":    kind,

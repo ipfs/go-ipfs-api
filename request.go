@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,7 +23,7 @@ type Request struct {
 	Headers map[string]string
 }
 
-func NewRequest(url, command string, args ...string) *Request {
+func NewRequest(ctx context.Context, url, command string, args ...string) *Request {
 	if !strings.HasPrefix(url, "http") {
 		url = "http://" + url
 	}
