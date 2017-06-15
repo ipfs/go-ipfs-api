@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	gohttp "net/http"
 	"os"
-	"os/user"
 	"path"
 	"strings"
 	"time"
@@ -20,10 +19,12 @@ import (
 	manet "github.com/multiformats/go-multiaddr-net"
 	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (
 	DefaultPathName = ".ipfs"
+	DefaultPathRoot = "~/" + DefaultPathName
 	DefaultApiFile  = "api"
 	EnvDir          = "IPFS_PATH"
 )
@@ -36,12 +37,12 @@ type Shell struct {
 func NewLocalShell() *Shell {
 	baseDir := os.Getenv(EnvDir)
 	if baseDir == "" {
-		u, err := user.Current()
-		if err != nil {
-			return nil
-		}
+		baseDir = DefaultPathRoot
+	}
 
-		baseDir = path.Join(u.HomeDir, DefaultPathName)
+	baseDir, err := homedir.Expand(baseDir)
+	if err != nil {
+		return nil
 	}
 
 	apiFile := path.Join(baseDir, DefaultApiFile)
@@ -55,7 +56,7 @@ func NewLocalShell() *Shell {
 		return nil
 	}
 
-	return NewShell(string(api))
+	return NewShell(strings.TrimSpace(string(api)))
 }
 
 func NewShell(url string) *Shell {
