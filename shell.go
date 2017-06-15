@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	gohttp "net/http"
 	"os"
+	"os/user"
+	"path"
 	"strings"
 	"time"
 
@@ -20,9 +22,40 @@ import (
 	tar "github.com/whyrusleeping/tar-utils"
 )
 
+const (
+	DefaultPathName = ".ipfs"
+	DefaultApiFile  = "api"
+	EnvDir          = "IPFS_PATH"
+)
+
 type Shell struct {
 	url     string
 	httpcli *gohttp.Client
+}
+
+func NewLocalShell() *Shell {
+	baseDir := os.Getenv(EnvDir)
+	if baseDir == "" {
+		u, err := user.Current()
+		if err != nil {
+			return nil
+		}
+
+		baseDir = path.Join(u.HomeDir, DefaultPathName)
+	}
+
+	apiFile := path.Join(baseDir, DefaultApiFile)
+
+	if _, err := os.Stat(apiFile); err != nil {
+		return nil
+	}
+
+	api, err := ioutil.ReadFile(apiFile)
+	if err != nil {
+		return nil
+	}
+
+	return NewShell(string(api))
 }
 
 func NewShell(url string) *Shell {
