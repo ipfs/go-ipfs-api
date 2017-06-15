@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	files "github.com/whyrusleeping/go-multipart-files"
+	files "github.com/mikesun/go-multipart-files"
 )
 
 type Request struct {
@@ -82,7 +82,6 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 
 	if fr, ok := r.Body.(*files.MultiFileReader); ok {
 		req.Header.Set("Content-Type", "multipart/form-data; boundary="+fr.Boundary())
-		req.Header.Set("Content-Disposition", "form-data: name=\"files\"")
 	}
 
 	resp, err := c.Do(req)
