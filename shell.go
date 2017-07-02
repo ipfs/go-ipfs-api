@@ -747,7 +747,7 @@ func (s *Shell) PubSubPublish(topic, data string) (err error) {
 		if err == nil {
 			err = err1
 		}
-	}
+	}()
 
 	return nil
 }
