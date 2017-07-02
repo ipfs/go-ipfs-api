@@ -738,10 +738,11 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 }
 
 func (s *Shell) PubSubPublish(topic, data string) error {
-	_, err := s.newRequest(context.Background(), "pubsub/pub", topic, data).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "pubsub/pub", topic, data).Send(s.httpcli)
 	if err != nil {
 		return err
 	}
+	defer resp.Close()
 
 	return nil
 }
