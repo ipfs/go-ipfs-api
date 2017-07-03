@@ -737,11 +737,17 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 	return newPubSubSubscription(resp), nil
 }
 
-func (s *Shell) PubSubPublish(topic, data string) error {
-	_, err := s.newRequest(context.Background(), "pubsub/pub", topic, data).Send(s.httpcli)
+func (s *Shell) PubSubPublish(topic, data string) (err error) {
+	resp, err := s.newRequest(context.Background(), "pubsub/pub", topic, data).Send(s.httpcli)
 	if err != nil {
-		return err
+		return
 	}
+	defer func(){
+		err1 := resp.Close()
+		if err == nil {
+			err = err1
+		}
+	}()
 
 	return nil
 }
