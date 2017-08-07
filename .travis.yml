@@ -6,6 +6,9 @@ go:
   - 1.7
   - tip
 
+env:
+  - IPFS_PATH=/tmp/ipfs
+
 matrix:
   allow_failures:
     - go: tip

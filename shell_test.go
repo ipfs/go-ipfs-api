@@ -25,6 +25,16 @@ func TestAdd(t *testing.T) {
 	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
 }
 
+func TestLocalShell(t *testing.T) {
+	is := is.New(t)
+	s := NewLocalShell()
+	is.NotNil(s)
+
+	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
+	is.Nil(err)
+	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+}
+
 func TestCat(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
