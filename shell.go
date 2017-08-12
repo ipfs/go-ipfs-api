@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
+	files "github.com/mikesun/go-multipart-files"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
-	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
 	homedir "github.com/mitchellh/go-homedir"
 )
@@ -234,7 +234,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	reader := files.NewMultiFileReader(slf, true)
 
 	req := NewRequest(context.Background(), s.url, "add")
-	req.Opts["r"] = "true"
+	req.Opts["recursive"] = "true"
 	req.Body = reader
 
 	resp, err := req.Send(s.httpcli)
