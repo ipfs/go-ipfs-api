@@ -147,15 +147,15 @@ type object struct {
 
 // Add a file to ipfs from the given reader, returns the hash of the added file
 func (s *Shell) Add(r io.Reader) (string, error) {
-	return s.addWithOpts(r, true)
+	return s.AddWithOpts(r, true, false)
 }
 
 // AddNoPin a file to ipfs from the given reader, returns the hash of the added file without pinning the file
 func (s *Shell) AddNoPin(r io.Reader) (string, error) {
-	return s.addWithOpts(r, false)
+	return s.AddWithOpts(r, false, false)
 }
 
-func (s *Shell) addWithOpts(r io.Reader, pin bool) (string, error) {
+func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, error) {
 	var rc io.ReadCloser
 	if rclose, ok := r.(io.ReadCloser); ok {
 		rc = rclose
@@ -173,6 +173,10 @@ func (s *Shell) addWithOpts(r io.Reader, pin bool) (string, error) {
 	req.Opts["progress"] = "false"
 	if !pin {
 		req.Opts["pin"] = "false"
+	}
+
+	if rawLeaves {
+		req.Opts["raw-leaves"] = "true"
 	}
 
 	resp, err := req.Send(s.httpcli)
