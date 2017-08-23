@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
+	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -776,7 +776,7 @@ func (s *Shell) PubSubPublish(topic, data string) (err error) {
 	if err != nil {
 		return
 	}
-	defer func(){
+	defer func() {
 		err1 := resp.Close()
 		if err == nil {
 			err = err1
