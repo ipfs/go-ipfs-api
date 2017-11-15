@@ -21,7 +21,7 @@ This will download the source into `$GOPATH/src/github.com/ipfs/go-ipfs-api`.
 
 ## Usage
 
-See [the godocs](https://godoc.org/github.com/ipfs/go-ipfs-api) for details on available methods. This should match the specs at [ipfs/specs](https://github.com/ipfs/specs/tree/master/api); however, there are still some methods which are not accounted for. If you would like to add any of them, see the contribute section below.
+See [the godocs](https://godoc.org/github.com/ipfs/go-ipfs-api) for details on available methods. This should match the specs at [ipfs/specs](https://github.com/ipfs/specs/tree/master/public-api); however, there are still some methods which are not accounted for. If you would like to add any of them, see the contribute section below.
 
 ## Contribute
 
