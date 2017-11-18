@@ -9,9 +9,9 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "Qmar7ei5yhwt1oCExdR1QZQgQxYUuPFV5tsqvPNzaBpGjM",
-      "name": "floodsub",
-      "version": "0.8.20"
+      "hash": "Qmd1HfU1m9mR839VhGp5JrcvteF7b5LoTtPMqcxLuriCTY",
+      "name": "go-libp2p-pubsub",
+      "version": "0.1.0"
     },
     {
       "author": "whyrusleeping",
