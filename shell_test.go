@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	examplesHash = "QmVtU7ths96fMgZ8YSZAbKghyieq7AjxNdcqyVzxTt3qVe"
+	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
 	shellUrl     = "localhost:5001"
 )
 
@@ -55,16 +55,17 @@ func TestList(t *testing.T) {
 	list, err := s.List(fmt.Sprintf("/ipfs/%s", examplesHash))
 	is.Nil(err)
 
-	is.Equal(len(list), 6)
+	is.Equal(len(list), 7)
 
 	// TODO: document difference in size between 'ipfs ls' and 'ipfs file ls -v'. additional object encoding in data block?
 	expected := map[string]LsLink{
 		"about":          {Type: TFile, Hash: "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V", Name: "about", Size: 1688},
 		"contact":        {Type: TFile, Hash: "QmYCvbfNbCwFR45HiNP45rwJgvatpiW38D961L5qAhUM5Y", Name: "contact", Size: 200},
 		"help":           {Type: TFile, Hash: "QmY5heUM5qgRubMDD1og9fhCPA6QdkMp3QCwd4s7gJsyE7", Name: "help", Size: 322},
-		"quick-start":    {Type: TFile, Hash: "QmUzLxaXnM8RYCPEqLDX5foToi5aNZHqfYr285w2BKhkft", Name: "quick-start", Size: 1697},
+		"ping":           {Type: TFile, Hash: "QmejvEPop4D7YUadeGqYWmZxHhLc4JBUCzJJHWMzdcMe2y", Name: "ping", Size: 12},
+		"quick-start":    {Type: TFile, Hash: "QmXgqKTbzdh83pQtKFb19SpMCpDDcKR2ujqk3pKph9aCNF", Name: "quick-start", Size: 1692},
 		"readme":         {Type: TFile, Hash: "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB", Name: "readme", Size: 1102},
-		"security-notes": {Type: TFile, Hash: "QmTumTjvcYCAvRRwQ8sDRxh8ezmrcr88YFU7iYNroGGTBZ", Name: "security-notes", Size: 1027},
+		"security-notes": {Type: TFile, Hash: "QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm", Name: "security-notes", Size: 1173},
 	}
 	for _, l := range list {
 		el, ok := expected[l.Name]
@@ -83,16 +84,17 @@ func TestFileList(t *testing.T) {
 
 	is.Equal(list.Type, "Directory")
 	is.Equal(list.Size, 0)
-	is.Equal(len(list.Links), 6)
+	is.Equal(len(list.Links), 7)
 
 	// TODO: document difference in sice betwen 'ipfs ls' and 'ipfs file ls -v'. additional object encoding in data block?
 	expected := map[string]UnixLsLink{
 		"about":          {Type: "File", Hash: "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V", Name: "about", Size: 1677},
 		"contact":        {Type: "File", Hash: "QmYCvbfNbCwFR45HiNP45rwJgvatpiW38D961L5qAhUM5Y", Name: "contact", Size: 189},
 		"help":           {Type: "File", Hash: "QmY5heUM5qgRubMDD1og9fhCPA6QdkMp3QCwd4s7gJsyE7", Name: "help", Size: 311},
-		"quick-start":    {Type: "File", Hash: "QmUzLxaXnM8RYCPEqLDX5foToi5aNZHqfYr285w2BKhkft", Name: "quick-start", Size: 1686},
+		"ping":           {Type: "File", Hash: "QmejvEPop4D7YUadeGqYWmZxHhLc4JBUCzJJHWMzdcMe2y", Name: "ping", Size: 4},
+		"quick-start":    {Type: "File", Hash: "QmXgqKTbzdh83pQtKFb19SpMCpDDcKR2ujqk3pKph9aCNF", Name: "quick-start", Size: 1681},
 		"readme":         {Type: "File", Hash: "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB", Name: "readme", Size: 1091},
-		"security-notes": {Type: "File", Hash: "QmTumTjvcYCAvRRwQ8sDRxh8ezmrcr88YFU7iYNroGGTBZ", Name: "security-notes", Size: 1016},
+		"security-notes": {Type: "File", Hash: "QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm", Name: "security-notes", Size: 1162},
 	}
 	for _, l := range list.Links {
 		el, ok := expected[l.Name]
@@ -141,7 +143,7 @@ func TestPatch_rmLink(t *testing.T) {
 	s := NewShell(shellUrl)
 	newRoot, err := s.Patch(examplesHash, "rm-link", "about")
 	is.Nil(err)
-	is.Equal(newRoot, "QmNjJ3naRhHCn14E895R1xtGmDgKQb8vnVvQar6RrnraC1")
+	is.Equal(newRoot, "QmPmCJpciopaZnKcwymfQyRAEjXReR6UL2rdSfEscZfzcp")
 }
 
 func TestPatchLink(t *testing.T) {
@@ -150,7 +152,7 @@ func TestPatchLink(t *testing.T) {
 
 	newRoot, err := s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", true)
 	is.Nil(err)
-	is.Equal(newRoot, "QmQwWjFnEPxwmkb5Ukn6UnbrBVebSAYnM11nmMs89e7zH9")
+	is.Equal(newRoot, "QmVfe7gesXf4t9JzWePqqib8QSifC1ypRBGeJHitSnF7fA")
 }
 
 func TestResolvePath(t *testing.T) {
