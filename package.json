@@ -30,12 +30,19 @@
       "hash": "QmX3U3YXCQ6UYBxq2LVWF8dARS1hPUTEYLrSx654Qyxyw6",
       "name": "go-multiaddr-net",
       "version": "1.5.5"
+    },
+    {
+      "author": "keks",
+      "hash": "QmfDySkRheT56VAKqvM57xsUcfCRPXjYPzFHr4dAGdpyGj",
+      "name": "go-ipfs-cmdkit",
+      "version": "0.3.4"
     }
   ],
   "gxVersion": "0.7.0",
   "language": "go",
   "license": "MIT",
   "name": "go-ipfs-api",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
   "version": "1.1.1"
 }
 
