@@ -63,7 +63,6 @@ func newPubSubSubscription(resp *Response) *PubSubSubscription {
 		resp: resp,
 	}
 
-	sub.Next() // skip empty element used for flushing
 	return sub
 }
 
