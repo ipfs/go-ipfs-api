@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
+	files "github.com/ipfs/go-ipfs-cmdkit/files"
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
-	files "github.com/whyrusleeping/go-multipart-files"
 	tar "github.com/whyrusleeping/tar-utils"
 )
 
@@ -230,7 +230,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		return "", err
 	}
 
-	sf, err := files.NewSerialFile("", dir, stat)
+	sf, err := files.NewSerialFile(path.Base(dir), dir, false, stat)
 	if err != nil {
 		return "", err
 	}
