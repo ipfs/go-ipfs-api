@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	files "github.com/whyrusleeping/go-multipart-files"
+	files "github.com/ipfs/go-ipfs-cmdkit/files"
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {
