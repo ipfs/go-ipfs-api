@@ -233,3 +233,12 @@ func TestObjectStat(t *testing.T) {
 	is.Equal(stat.LinksSize, 3)
 	is.Equal(stat.CumulativeSize, 1688)
 }
+
+func TestDagPut(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
+	is.Nil(err)
+	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
+}
