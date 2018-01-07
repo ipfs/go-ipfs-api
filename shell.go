@@ -556,7 +556,7 @@ func (s *Shell) Get(hash, outdir string) error {
 	return extractor.Extract(resp.Output)
 }
 
-func (s *Shell) GetTar(hash, outdir string) (io.Reader, error) {
+func (s *Shell) GetTar(hash) (io.Reader, error) {
 	resp, err := s.newRequest(context.Background(), "get", hash).Send(s.httpcli)
 	if err != nil {
 		return err
