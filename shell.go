@@ -556,7 +556,7 @@ func (s *Shell) Get(hash, outdir string) error {
 	return extractor.Extract(resp.Output)
 }
 
-func (s *Shell) GetTar(hash string) (io.Reader, error) {
+func (s *Shell) GetTar(hash string) ([]byte, error) {
 	resp, err := s.newRequest(context.Background(), "get", hash).Send(s.httpcli)
 	if err != nil {
 		return nil, err
@@ -566,7 +566,9 @@ func (s *Shell) GetTar(hash string) (io.Reader, error) {
 	if resp.Error != nil {
 		return nil, resp.Error
 	}
-	return resp.Output, nil
+
+	bs, _ := ioutil.ReadAll(resp.Output)
+	return bs, nil
 }
 
 func (s *Shell) NewObject(template string) (string, error) {
