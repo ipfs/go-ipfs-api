@@ -556,10 +556,10 @@ func (s *Shell) Get(hash, outdir string) error {
 	return extractor.Extract(resp.Output)
 }
 
-func (s *Shell) GetTar(hash) (io.Reader, error) {
+func (s *Shell) GetTar(hash string) (io.Reader, error) {
 	resp, err := s.newRequest(context.Background(), "get", hash).Send(s.httpcli)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Close()
 
