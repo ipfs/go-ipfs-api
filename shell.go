@@ -556,6 +556,19 @@ func (s *Shell) Get(hash, outdir string) error {
 	return extractor.Extract(resp.Output)
 }
 
+func (s *Shell) GetTar(hash, outdir string) (io.Reader, error) {
+	resp, err := s.newRequest(context.Background(), "get", hash).Send(s.httpcli)
+	if err != nil {
+		return err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+	return resp.Output, nil
+}
+
 func (s *Shell) NewObject(template string) (string, error) {
 	args := []string{}
 	if template != "" {
