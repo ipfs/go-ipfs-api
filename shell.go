@@ -62,6 +62,7 @@ func NewLocalShell() *Shell {
 func NewShell(url string) *Shell {
 	c := &gohttp.Client{
 		Transport: &gohttp.Transport{
+			Proxy: gohttp.ProxyFromEnvironment,
 			DisableKeepAlives: true,
 		},
 	}
