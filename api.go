@@ -1,15 +1,57 @@
 package shell
 
 import (
-	"github.com/ipfs/go-ipfs/core/coreapi/interface"
 	"context"
 	"errors"
+	"os"
+	"strings"
+	"path/filepath"
+	"io/ioutil"
+
+	homedir "github.com/mitchellh/go-homedir"
+	iface "github.com/ipfs/go-ipfs/core/coreapi/interface"
 )
 
-type httpApi struct{}
+const (
+	DefaultPathName = ".ipfs"
+	DefaultPathRoot = "~/" + DefaultPathName
+	DefaultApiFile  = "api"
+	EnvDir          = "IPFS_PATH"
+)
+
+type httpApi struct{
+	url string
+}
 
 func NewLocalApi() (iface.CoreAPI, error) {
-	return &httpApi{}, nil
+	baseDir := os.Getenv(EnvDir)
+	if baseDir == "" {
+		baseDir = DefaultPathRoot
+	}
+
+	baseDir, err := homedir.Expand(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	apiFile := filepath.Join(baseDir, DefaultApiFile)
+
+	if _, err := os.Stat(apiFile); err != nil {
+		return nil, err
+	}
+
+	api, err := ioutil.ReadFile(apiFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewApi(strings.TrimSpace(string(api)))
+}
+
+func NewApi(url string) (iface.CoreAPI, error) {
+	return &httpApi{
+		url: url,
+	}, nil
 }
 
 // Unixfs returns the UnixfsAPI interface backed by the go-ipfs node
