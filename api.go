@@ -7,9 +7,12 @@ import (
 	"strings"
 	"path/filepath"
 	"io/ioutil"
+	"net/http"
 
 	homedir "github.com/mitchellh/go-homedir"
 	iface "github.com/ipfs/go-ipfs/core/coreapi/interface"
+	ma "github.com/multiformats/go-multiaddr"
+	manet "github.com/multiformats/go-multiaddr-net"
 )
 
 const (
@@ -20,7 +23,8 @@ const (
 )
 
 type httpApi struct{
-	url string
+	url    string
+	client *http.Client
 }
 
 func NewLocalApi() (iface.CoreAPI, error) {
@@ -49,8 +53,20 @@ func NewLocalApi() (iface.CoreAPI, error) {
 }
 
 func NewApi(url string) (iface.CoreAPI, error) {
+	if a, err := ma.NewMultiaddr(url); err == nil {
+		_, host, err := manet.DialArgs(a)
+		if err == nil {
+			url = host
+		}
+	}
+
 	return &httpApi{
 		url: url,
+		client: &http.Client{
+			Transport: &http.Transport{
+				DisableKeepAlives: true,
+			},
+		},
 	}, nil
 }
 
@@ -75,7 +91,7 @@ func (api *httpApi) Name() iface.NameAPI {
 
 // Key returns the KeyAPI interface backed by the go-ipfs node
 func (api *httpApi) Key() iface.KeyAPI {
-	return nil
+	return (*httpKeyApi)(api)
 }
 
 //Object returns the ObjectAPI interface backed by the go-ipfs node
