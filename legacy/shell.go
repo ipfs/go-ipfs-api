@@ -1,5 +1,5 @@
 // package shell implements a remote API interface for a running ipfs daemon
-package shell
+package legacy
 
 import (
 	"bytes"
