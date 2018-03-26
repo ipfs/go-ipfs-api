@@ -51,9 +51,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmYk64JEF4QWPB9Kqib63g8vfYfv78AmSUyeFaMaX6F9vQ",
+      "hash": "QmQine7gvHncNevKtG9QXxf3nXcwSj6aDDmMm52mHofEEp",
       "name": "tar-utils",
-      "version": "0.0.2"
+      "version": "0.0.3"
     }
   ],
   "gxVersion": "0.7.0",
@@ -61,6 +61,6 @@
   "license": "MIT",
   "name": "go-ipfs-api",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "1.2.4"
+  "version": "1.2.5"
 }
 
