@@ -699,6 +699,32 @@ func (s *Shell) BlockPut(block []byte) (string, error) {
 	return out.Key, nil
 }
 
+func (s *Shell) BlockRm(key string) (string, error){
+	req := s.newRequest(context.Background(), "block/rm", key)
+	req.Opts["force"] = "true"
+	
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+	if resp.Error !=nil {
+		return "", resp.Error
+	}
+	
+	var out struct {
+		Hash,Error string
+	}
+	err = json.NewDecoder(resp.Output).Decode(&out)
+	if err != nil {
+		return "", err
+	}
+
+	return out.Hash, errors.New(out.Error)
+}
+
+
+
 type IpfsObject struct {
 	Links []ObjectLink
 	Data  string
