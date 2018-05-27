@@ -1,4 +1,4 @@
-package shell
+package legacy
 
 import (
 	"encoding/binary"

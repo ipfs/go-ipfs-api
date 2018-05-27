@@ -1,4 +1,4 @@
-package shell
+package legacy
 
 import (
 	"context"
@@ -23,10 +23,7 @@ type Request struct {
 	Headers map[string]string
 }
 
-//TODO: consider refactoring / cleaning up all this
-func (api *httpApi) newRequest(ctx context.Context, command string, args ...string) *Request {
-	url := api.url
-
+func NewRequest(ctx context.Context, url, command string, args ...string) *Request {
 	if !strings.HasPrefix(url, "http") {
 		url = "http://" + url
 	}
@@ -76,7 +73,9 @@ func (e *Error) Error() string {
 }
 
 func (r *Request) Send(c *http.Client) (*Response, error) {
-	req, err := http.NewRequest("POST", r.getURL(), r.Body)
+	url := r.getURL()
+
+	req, err := http.NewRequest("POST", url, r.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +134,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 }
 
 func (r *Request) getURL() string {
+
 	values := make(url.Values)
 	for _, arg := range r.Args {
 		values.Add("arg", arg)
