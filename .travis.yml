@@ -3,8 +3,7 @@ sudo: required
 language: go
 
 go:
-  - 1.8
-  - tip
+  - 1.10.x
 
 env:
   - IPFS_PATH=/tmp/ipfs
@@ -23,3 +22,9 @@ before_install:
 
 install:
   - go get -t -v ./...
+
+script:
+  - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
+
+notifications:
+  email: false
