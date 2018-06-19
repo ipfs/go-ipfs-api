@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	osh "github.com/Kubuxu/go-os-helper"
 	files "github.com/ipfs/go-ipfs-cmdkit/files"
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
@@ -27,6 +28,11 @@ const (
 	DefaultPathRoot = "~/" + DefaultPathName
 	DefaultApiFile  = "api"
 	EnvDir          = "IPFS_PATH"
+)
+
+var (
+	haveLinkCreatePriviledge bool
+	platformLinker           func(l tar.Link) error
 )
 
 type Shell struct {
@@ -554,7 +560,16 @@ func (s *Shell) Get(hash, outdir string) error {
 	}
 
 	extractor := &tar.Extractor{Path: outdir}
+	sanitizeExtractor(extractor)
+
 	return extractor.Extract(resp.Output)
+}
+
+func sanitizeExtractor(ex *tar.Extractor) {
+	if osh.IsWindows() {
+		ex.Sanitize(true)
+		ex.LinkFunc = platformLinker
+	}
 }
 
 func (s *Shell) NewObject(template string) (string, error) {
