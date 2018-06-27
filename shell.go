@@ -92,10 +92,6 @@ func (s *Shell) newRequest(ctx context.Context, command string, args ...string) 
 	return NewRequest(ctx, s.url, command, args...)
 }
 
-func (s *Shell) newRequestIPNS(ctx context.Context, command string, args map[string]string) *RequestIPNS {
-	return NewRequestIPNS(ctx, s.url, command, args)
-}
-
 type IdOutput struct {
 	ID              string
 	PublicKey       string

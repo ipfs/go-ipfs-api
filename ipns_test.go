@@ -13,7 +13,7 @@ var examplesHash = "/ipfs/Qmbu7x6gJbsKDcseQv66pSbUcAA3Au6f7MfTYVXwvBxN2K"
 func TestPublishDetailsWithKey(t *testing.T) {
 	shell := ipfsapi.NewShell("localhost:5001")
 
-	resp, err := shell.PublishWithDetails(examplesHash, "self", time.Hour, time.Hour, false)
+	resp, err := shell.PublishWithDetails(examplesHash, "key1", time.Hour, time.Hour, false)
 	if err != nil {
 		t.Fatal(err)
 	}

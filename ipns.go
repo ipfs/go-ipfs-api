@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"strconv"
 	"time"
 )
@@ -37,19 +36,16 @@ func (s *Shell) Publish(node string, value string) error {
 // PublishWithDetails is used for fine grained control over record publishing
 func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.Duration, resolve bool) (*PublishResponse, error) {
 	var pubResp PublishResponse
-	if contentHash == "" {
-		return nil, errors.New("empty contentHash provided")
-	}
-	args := make(map[string]string)
-	args["arg"] = contentHash
-	args["lifetime"] = lifetime.String()
-	args["ttl"] = ttl.String()
-	args["resolve"] = strconv.FormatBool(resolve)
+	args := []string{contentHash}
+	req := s.newRequest(context.Background(), "name/publish", args...)
 	if key == "" {
 		key = "self"
 	}
-	args["key"] = key
-	resp, err := s.newRequestIPNS(context.Background(), "name/publish", args).SendIPNS(s.httpcli)
+	req.Opts["key"] = key
+	req.Opts["lifetime"] = lifetime.String()
+	req.Opts["ttl"] = ttl.String()
+	req.Opts["resolve"] = strconv.FormatBool(resolve)
+	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
