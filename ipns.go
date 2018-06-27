@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
+	"time"
 )
 
 type PublishResponse struct {
@@ -33,33 +35,25 @@ func (s *Shell) Publish(node string, value string) error {
 }
 
 // PublishWithDetails is used for fine grained control over record publishing
-func (s *Shell) PublishWithDetails(contentHash string, lifetime string, ttl string, key string, resolve bool) (*PublishResponse, error) {
+func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.Duration, resolve bool) (*PublishResponse, error) {
 	var pubResp PublishResponse
-	var resolveString string
 	if contentHash == "" {
 		return nil, errors.New("empty contentHash provided")
 	}
-	if lifetime == "" {
-		return nil, errors.New("empty lifetime provided")
-	}
-	if ttl == "" {
-		return nil, errors.New("empty ttl provided")
-	}
+	args := make(map[string]string)
+	args["arg"] = contentHash
+	args["lifetime"] = lifetime.String()
+	args["ttl"] = ttl.String()
+	args["resolve"] = strconv.FormatBool(resolve)
 	if key == "" {
-		return nil, errors.New("empty key provided")
+		key = "self"
 	}
-	if resolve {
-		resolveString = "true"
-	} else {
-		resolveString = "false"
-	}
-	args := []string{contentHash, resolveString, lifetime, ttl, key}
-	resp, err := s.newRequest(context.TODO(), "name/publish", args...).Send(s.httpcli)
+	args["key"] = key
+	resp, err := s.newRequestIPNS(context.Background(), "name/publish", args).SendIPNS(s.httpcli)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Close()
-
 	if resp.Error != nil {
 		return nil, resp.Error
 	}
