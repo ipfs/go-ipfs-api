@@ -42,8 +42,12 @@ func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.D
 		key = "self"
 	}
 	req.Opts["key"] = key
-	req.Opts["lifetime"] = lifetime.String()
-	req.Opts["ttl"] = ttl.String()
+	if lifetime.Seconds() > 0 {
+		req.Opts["lifetime"] = lifetime.String()
+	}
+	if ttl.Seconds() > 0 {
+		req.Opts["ttl"] = ttl.String()
+	}
 	req.Opts["resolve"] = strconv.FormatBool(resolve)
 	resp, err := req.Send(s.httpcli)
 	if err != nil {

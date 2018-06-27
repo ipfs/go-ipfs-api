@@ -1,37 +1,38 @@
-package shell_test
+package shell
 
 import (
 	"fmt"
 	"testing"
 	"time"
-
-	ipfsapi "github.com/RTradeLtd/go-ipfs-api"
 )
 
-var examplesHash = "/ipfs/Qmbu7x6gJbsKDcseQv66pSbUcAA3Au6f7MfTYVXwvBxN2K"
+var examplesHashForIPNS = "/ipfs/Qmbu7x6gJbsKDcseQv66pSbUcAA3Au6f7MfTYVXwvBxN2K"
+var testKey = "self" // feel free to change to whatever key you have locally
 
 func TestPublishDetailsWithKey(t *testing.T) {
-	shell := ipfsapi.NewShell("localhost:5001")
+	t.Skip()
+	shell := NewShell("localhost:5001")
 
-	resp, err := shell.PublishWithDetails(examplesHash, "key1", time.Hour, time.Hour, false)
+	resp, err := shell.PublishWithDetails(examplesHashForIPNS, testKey, time.Second, time.Second, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Value != examplesHash {
+	if resp.Value != examplesHashForIPNS {
 		t.Fatalf(fmt.Sprintf("Expected to receive %s but got %s", examplesHash, resp.Value))
 	}
 }
 
 func TestPublishDetailsWithoutKey(t *testing.T) {
-	shell := ipfsapi.NewShell("localhost:5001")
+	t.Skip()
+	shell := NewShell("localhost:5001")
 
-	resp, err := shell.PublishWithDetails(examplesHash, "", time.Hour, time.Hour, false)
+	resp, err := shell.PublishWithDetails(examplesHashForIPNS, "", time.Second, time.Second, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Value != examplesHash {
+	if resp.Value != examplesHashForIPNS {
 		t.Fatalf(fmt.Sprintf("Expected to receive %s but got %s", examplesHash, resp.Value))
 	}
 }
