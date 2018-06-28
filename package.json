@@ -33,9 +33,9 @@
     },
     {
       "author": "keks",
-      "hash": "QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM",
+      "hash": "QmdE4gMduCKCGAcczM2F5ioYDfdeKuPix138wrES1YSr7f",
       "name": "go-ipfs-cmdkit",
-      "version": "1.0.0"
+      "version": "1.1.1"
     },
     {
       "author": "mitchellh",
@@ -61,6 +61,6 @@
   "license": "MIT",
   "name": "go-ipfs-api",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "1.2.8"
+  "version": "1.2.9"
 }
 
