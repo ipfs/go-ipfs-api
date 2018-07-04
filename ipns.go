@@ -35,7 +35,7 @@ func (s *Shell) Publish(node string, value string) error {
 
 // PublishWithDetails is used for fine grained control over record publishing
 func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.Duration, resolve bool) (*PublishResponse, error) {
-	
+
 	args := []string{contentHash}
 	req := s.newRequest(context.Background(), "name/publish", args...)
 	if key == "" {
