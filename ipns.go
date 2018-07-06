@@ -1,9 +1,17 @@
 package shell
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"strconv"
+	"time"
 )
+
+type PublishResponse struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
 
 // Publish updates a mutable name to point to a given value
 func (s *Shell) Publish(node string, value string) error {
@@ -23,6 +31,37 @@ func (s *Shell) Publish(node string, value string) error {
 	}
 
 	return nil
+}
+
+// PublishWithDetails is used for fine grained control over record publishing
+func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.Duration, resolve bool) (*PublishResponse, error) {
+
+	args := []string{contentHash}
+	req := s.newRequest(context.Background(), "name/publish", args...)
+	if key == "" {
+		key = "self"
+	}
+	req.Opts["key"] = key
+	if lifetime.Seconds() > 0 {
+		req.Opts["lifetime"] = lifetime.String()
+	}
+	if ttl.Seconds() > 0 {
+		req.Opts["ttl"] = ttl.String()
+	}
+	req.Opts["resolve"] = strconv.FormatBool(resolve)
+	resp, err := req.Send(s.httpcli)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Output)
+	var pubResp PublishResponse
+	json.Unmarshal(buf.Bytes(), &pubResp)
+	return &pubResp, nil
 }
 
 // Resolve gets resolves the string provided to an /ipfs/[hash]. If asked to
