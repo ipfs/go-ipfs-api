@@ -64,7 +64,7 @@ func (s *Shell) PublishWithDetails(contentHash, key string, lifetime, ttl time.D
 	return &pubResp, nil
 }
 
-// Resolve gets resolves the string provided to an /ipfs/[hash]. If asked to
+// Resolve gets resolves the string provided to an /ipns/[name]. If asked to
 // resolve an empty string, resolve instead resolves the node's own /ipns value.
 func (s *Shell) Resolve(id string) (string, error) {
 	var resp *Response
