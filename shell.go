@@ -20,6 +20,8 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 	tar "github.com/whyrusleeping/tar-utils"
+
+	p2pmetrics "gx/ipfs/QmdeBtQGXjSt7cb97nx9JyLHHv5va2LyEAue7Q5tDFzpLy/go-libp2p-metrics"
 )
 
 const (
@@ -849,4 +851,35 @@ func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
 	}
 
 	return stat, nil
+}
+
+// ObjectStat gets stats for the DAG object named by key. It returns
+// the stats of the requested Object or an error.
+func (s *Shell) StatsBW() (*p2pmetrics.Stats, error) {
+	v := &p2pmetrics.Stats{}
+	err := s.RequestDecode(context.TODO(), &v, "stats/bw")
+	return v, err
+}
+
+type SwarmStreamInfo struct {
+	Protocol string
+}
+
+type SwarmConnInfo struct {
+	Addr    string
+	Peer    string
+	Latency string
+	Muxer   string
+	Streams []SwarmStreamInfo
+}
+
+type SwarmConnInfos struct {
+	Peers []SwarmConnInfo
+}
+
+// SwarmPeers gets all the swarm peers
+func (s *Shell) SwarmPeers() (*SwarmConnInfos, error) {
+	v := &SwarmConnInfos{}
+	err := s.RequestDecode(context.TODO(), &v, "swarm/peers")
+	return v, err
 }
