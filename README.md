@@ -9,6 +9,13 @@
 
 ![](https://camo.githubusercontent.com/651f7045071c78042fec7f5b9f015e12589af6d5/68747470733a2f2f697066732e696f2f697066732f516d514a363850464d4464417367435a76413155567a7a6e3138617356636637485676434467706a695343417365)
 
+
+# READ BEFORE USING
+
+This particular branch contains modifications that are not in the upstream version of this repo, and is the branch used by Temporal
+
+# How To Use
+
 > An unofficial go interface to ipfs's HTTP API
 
 ## Install
