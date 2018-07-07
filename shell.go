@@ -92,6 +92,25 @@ func (s *Shell) newRequest(ctx context.Context, command string, args ...string) 
 	return NewRequest(ctx, s.url, command, args...)
 }
 
+func (s *Shell) Request(ctx context.Context, command string, args ...string) (*Request, *Response, error) {
+	req := s.newRequest(ctx, command, args...)
+	res, err := req.Send(s.httpcli)
+	return req, res, err
+}
+
+func (s *Shell) RequestDecode(ctx context.Context, dec interface{}, command string, args ...string) error {
+	_, res, err := s.Request(ctx, command, args...)
+	if err != nil {
+		return err
+	}
+	defer res.Close()
+	if res.Error != nil {
+		return res.Error
+	}
+
+	return json.NewDecoder(res.Output).Decode(dec)
+}
+
 type IdOutput struct {
 	ID              string
 	PublicKey       string
