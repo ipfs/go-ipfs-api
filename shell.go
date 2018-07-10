@@ -583,7 +583,7 @@ func (s *Shell) NewObject(template string) (string, error) {
 }
 
 func (s *Shell) ResolvePath(path string) (string, error) {
-	resp, err := s.newRequest(context.Background(), "object/stat", path).Send(s.httpcli)
+	resp, err := s.newRequest(context.Background(), "resolve", path).Send(s.httpcli)
 	if err != nil {
 		return "", err
 	}
@@ -593,13 +593,17 @@ func (s *Shell) ResolvePath(path string) (string, error) {
 		return "", resp.Error
 	}
 
-	var out object
+	var out struct {
+		Path string
+	}
 	err = json.NewDecoder(resp.Output).Decode(&out)
 	if err != nil {
 		return "", err
 	}
 
-	return out.Hash, nil
+	p := strings.TrimPrefix(out.Path, "/ipfs/")
+
+	return p, nil
 }
 
 // returns ipfs version and commit sha
