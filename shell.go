@@ -670,7 +670,7 @@ func (s *Shell) BlockGet(path string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Output)
 }
 
-func (s *Shell) BlockPut(block []byte) (string, error) {
+func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string, error) {
 	data := bytes.NewReader(block)
 	rc := ioutil.NopCloser(data)
 	fr := files.NewReaderFile("", "", rc, nil)
@@ -679,6 +679,11 @@ func (s *Shell) BlockPut(block []byte) (string, error) {
 
 	req := s.newRequest(context.Background(), "block/put")
 	req.Body = fileReader
+	req.Opts = map[string]string{
+		"mhtype": mhtype,
+		"mhlen":  fmt.Sprintf("%d", mhlen),
+		"format": format,
+	}
 	resp, err := req.Send(s.httpcli)
 	if err != nil {
 		return "", err
