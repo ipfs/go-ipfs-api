@@ -242,3 +242,17 @@ func TestDagPut(t *testing.T) {
 	is.Nil(err)
 	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
 }
+
+func TestStatsBW(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	_, err := s.StatsBW()
+	is.Nil(err)
+}
+
+func TestSwarmPeers(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	_, err := s.SwarmPeers()
+	is.Nil(err)
+}
