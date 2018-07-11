@@ -94,23 +94,12 @@ func (s *Shell) newRequest(ctx context.Context, command string, args ...string) 
 	return NewRequest(ctx, s.url, command, args...)
 }
 
-func (s *Shell) Request(ctx context.Context, command string, args ...string) (*Request, *Response, error) {
-	req := s.newRequest(ctx, command, args...)
-	res, err := req.Send(s.httpcli)
-	return req, res, err
-}
-
-func (s *Shell) RequestDecode(ctx context.Context, dec interface{}, command string, args ...string) error {
-	_, res, err := s.Request(ctx, command, args...)
-	if err != nil {
-		return err
+func (s *Shell) Request(command string, args ...string) *RequestBuilder {
+	return &RequestBuilder{
+		command: command,
+		args:    args,
+		shell:   s,
 	}
-	defer res.Close()
-	if res.Error != nil {
-		return res.Error
-	}
-
-	return json.NewDecoder(res.Output).Decode(dec)
 }
 
 type IdOutput struct {
@@ -855,9 +844,9 @@ func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
 
 // ObjectStat gets stats for the DAG object named by key. It returns
 // the stats of the requested Object or an error.
-func (s *Shell) StatsBW() (*p2pmetrics.Stats, error) {
+func (s *Shell) StatsBW(ctx context.Context) (*p2pmetrics.Stats, error) {
 	v := &p2pmetrics.Stats{}
-	err := s.RequestDecode(context.TODO(), &v, "stats/bw")
+	err := s.Request("stats/bw").Exec(ctx, &v)
 	return v, err
 }
 
@@ -878,8 +867,8 @@ type SwarmConnInfos struct {
 }
 
 // SwarmPeers gets all the swarm peers
-func (s *Shell) SwarmPeers() (*SwarmConnInfos, error) {
+func (s *Shell) SwarmPeers(ctx context.Context) (*SwarmConnInfos, error) {
 	v := &SwarmConnInfos{}
-	err := s.RequestDecode(context.TODO(), &v, "swarm/peers")
+	err := s.Request("swarm/peers").Exec(ctx, &v)
 	return v, err
 }

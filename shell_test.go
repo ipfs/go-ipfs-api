@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io"
@@ -246,13 +247,13 @@ func TestDagPut(t *testing.T) {
 func TestStatsBW(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
-	_, err := s.StatsBW()
+	_, err := s.StatsBW(context.Background())
 	is.Nil(err)
 }
 
 func TestSwarmPeers(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
-	_, err := s.SwarmPeers()
+	_, err := s.SwarmPeers(context.Background())
 	is.Nil(err)
 }
