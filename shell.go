@@ -21,7 +21,7 @@ import (
 	manet "github.com/multiformats/go-multiaddr-net"
 	tar "github.com/whyrusleeping/tar-utils"
 
-	p2pmetrics "gx/ipfs/QmdeBtQGXjSt7cb97nx9JyLHHv5va2LyEAue7Q5tDFzpLy/go-libp2p-metrics"
+	p2pmetrics "github.com/libp2p/go-libp2p-metrics"
 )
 
 const (
