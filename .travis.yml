@@ -18,7 +18,11 @@ services:
 before_install:
 - docker pull ipfs/go-ipfs:master
 - mkdir /tmp/ipfs && chmod 0777 /tmp/ipfs
-- docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master --enable-pubsub-experiment
+- docker run -v /tmp/ipfs:/data/ipfs --user ipfs --entrypoint "" ipfs/go-ipfs:master ipfs init
+- docker run -v /tmp/ipfs:/data/ipfs --user ipfs --entrypoint "" ipfs/go-ipfs:master ipfs config --json Experimental.Libp2pStreamMounting true
+- docker run -v /tmp/ipfs:/data/ipfs --user ipfs --entrypoint "" ipfs/go-ipfs:master ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
+- docker run -v /tmp/ipfs:/data/ipfs --user ipfs --entrypoint "" ipfs/go-ipfs:master ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
+- docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master daemon --enable-pubsub-experiment
 
 install:
   - go get -t -v ./...
