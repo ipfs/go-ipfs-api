@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	files "github.com/ipfs/go-ipfs-cmdkit/files"
@@ -27,6 +28,13 @@ const (
 	DefaultPathRoot = "~/" + DefaultPathName
 	DefaultApiFile  = "api"
 	EnvDir          = "IPFS_PATH"
+	DefaultGateway  = "https://ipfs.io"
+	DefaultAPIAddr  = "/ip4/127.0.0.1/tcp/5001"
+)
+
+var (
+	defaultShellAddr         string
+	defaultShellAddrLoadOnce sync.Once
 )
 
 type Shell struct {
@@ -84,32 +92,12 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	}
 }
 
-// Get shell from environmental variables, default api path or gateway.
-func DefaultShell() (*Shell, error) {
-	urls := make([]string, 1)
-	if ipfsAPI := os.Getenv("IPFS_API"); ipfsAPI != "" {
-		urls = append(urls, ipfsAPI)
-	}
-	ipfsPath := os.Getenv("IPFS_PATH")
-	if ipfsPath == "" {
-		if homePath, err := homedir.Dir(); err == nil {
-			ipfsPath = homePath
-		}
-	}
-	if ipfsPath != "" {
-		apifile := path.Join(ipfsPath, ".ipfs", "api")
-		if data, err := ioutil.ReadFile(apifile); err == nil {
-			url := strings.Trim(string(data), "\n\t ")
-			urls = append(urls, url)
-		}
-	}
-	urls = append(urls, "/ip4/127.0.0.1/tcp/5001", "https://ipfs.io")
-
-	// do not repeat encountered addresses
-	encountered := map[string]bool{}
+// Load all shell urls with error checking
+func NewShellWithCheck(urls ...string) (*Shell, error) {
+	encountered := map[string]struct{}{}
 	for _, url := range urls {
-		if encountered[url] != true {
-			encountered[url] = true
+		if _, ok := encountered[url]; !ok {
+			encountered[url] = struct{}{}
 			sh := NewShell(url)
 			_, _, err := sh.Version()
 			if err == nil {
@@ -117,7 +105,79 @@ func DefaultShell() (*Shell, error) {
 			}
 		}
 	}
-	return nil, errors.New("No default node is working")
+	return nil, errors.New(fmt.Sprintf("No working server in %v", urls))
+}
+
+func NewShellFromDefaultGateway() (*Shell, error) {
+	return NewShellWithCheck(DefaultGateway)
+}
+
+// Get all shell urls from api files
+func newShellFromAPIFiles(files ...string) (urls []string) {
+	for _, apifile := range files {
+		if data, err := ioutil.ReadFile(apifile); err == nil {
+			url := strings.Trim(string(data), "\n\t ")
+			urls = append(urls, url)
+		}
+	}
+	return
+}
+
+func NewShellFromAPIFiles(files ...string) (*Shell, error) {
+	return NewShellWithCheck(newShellFromAPIFiles(files...)...)
+}
+
+// Get api url from ~/.ipfs/api
+func newShellFromDefaultAPIFile() (urls []string) {
+	apifile, err := homedir.Expand(path.Join(DefaultPathRoot, DefaultApiFile))
+	if err != nil {
+		return urls
+	}
+	return newShellFromAPIFiles(apifile)
+}
+
+func NewShellFromDefaultAPIFile() (*Shell, error) {
+	return NewShellWithCheck(newShellFromDefaultAPIFile()...)
+}
+
+// get all shell urls from environmental variable IPFS_API and IPFS_PATH
+func newShellFromEnv() (urls []string) {
+	if ipfsAPI := os.Getenv("IPFS_API"); ipfsAPI != "" {
+		urls = append(urls, ipfsAPI)
+	}
+	if ipfsPath := os.Getenv("IPFS_PATH"); ipfsPath != "" {
+		apifile := path.Join(ipfsPath, DefaultApiFile)
+		urls = append(urls, newShellFromAPIFiles(apifile)...)
+	}
+	return
+}
+
+func NewShellFromEnv() (*Shell, error) {
+	return NewShellWithCheck(newShellFromEnv()...)
+}
+
+// Load working default shell address once
+func defaultShell() {
+	fmt.Println("ran defaultShell")
+	var urls []string
+	urls = append(urls, newShellFromEnv()...)
+	urls = append(urls, newShellFromDefaultAPIFile()...)
+	urls = append(urls, DefaultAPIAddr, DefaultGateway)
+	if sh, err := NewShellWithCheck(urls...); err == nil {
+		defaultShellAddr = sh.url
+	}
+}
+
+func DefaultShell() *Shell {
+	// Load once and cache working default shell address
+	defaultShellAddrLoadOnce.Do(defaultShell)
+	return NewShell(defaultShellAddr)
+}
+
+func DefaultShellWithCheck() (*Shell, error) {
+	// Load once and cache working default shell address
+	defaultShellAddrLoadOnce.Do(defaultShell)
+	return NewShellWithCheck(defaultShellAddr)
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {
