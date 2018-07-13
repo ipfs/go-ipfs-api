@@ -84,6 +84,42 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	}
 }
 
+// Get shell from environmental variables, default api path or gateway.
+func DefaultShell() (*Shell, error) {
+	urls := make([]string, 1)
+	if ipfsAPI := os.Getenv("IPFS_API"); ipfsAPI != "" {
+		urls = append(urls, ipfsAPI)
+	}
+	ipfsPath := os.Getenv("IPFS_PATH")
+	if ipfsPath == "" {
+		if homePath, err := homedir.Dir(); err == nil {
+			ipfsPath = homePath
+		}
+	}
+	if ipfsPath != "" {
+		apifile := path.Join(ipfsPath, ".ipfs", "api")
+		if data, err := ioutil.ReadFile(apifile); err == nil {
+			url := strings.Trim(string(data), "\n\t ")
+			urls = append(urls, url)
+		}
+	}
+	urls = append(urls, "/ip4/127.0.0.1/tcp/5001", "https://ipfs.io")
+
+	// do not repeat encountered addresses
+	encountered := map[string]bool{}
+	for _, url := range urls {
+		if encountered[url] != true {
+			encountered[url] = true
+			sh := NewShell(url)
+			_, _, err := sh.Version()
+			if err == nil {
+				return sh, nil
+			}
+		}
+	}
+	return nil, errors.New("No default node is working")
+}
+
 func (s *Shell) SetTimeout(d time.Duration) {
 	s.httpcli.Timeout = d
 }
