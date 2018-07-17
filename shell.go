@@ -181,13 +181,13 @@ func (s *Shell) AddLink(target string) (string, error) {
 }
 
 // AddDir adds a directory recursively with all of the files under it
-func (s *Shell) AddDir(dir string) (string, error) {
+func (s *Shell) AddDir(dir string, hidden bool) (string, error) {
 	stat, err := os.Lstat(dir)
 	if err != nil {
 		return "", err
 	}
 
-	sf, err := files.NewSerialFile(path.Base(dir), dir, false, stat)
+	sf, err := files.NewSerialFile(path.Base(dir), dir, hidden, stat)
 	if err != nil {
 		return "", err
 	}
@@ -196,6 +196,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 
 	resp, err := s.Request("add").
 		Option("recursive", true).
+		Option("hidden", hidden).
 		Body(reader).
 		Send(context.Background())
 
