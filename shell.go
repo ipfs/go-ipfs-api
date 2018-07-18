@@ -594,3 +594,16 @@ func (s *Shell) SwarmPeers(ctx context.Context) (*SwarmConnInfos, error) {
 	err := s.Request("swarm/peers").Exec(ctx, &v)
 	return v, err
 }
+
+type swarmConnection struct {
+	Strings []string
+}
+
+// SwarmConnect opens a swarm connection to a specific address.
+func (s *Shell) SwarmConnect(ctx context.Context, addr string) error {
+	var conn *swarmConnection
+	err := s.Request("swarm/connect").
+		Arguments(addr).
+		Exec(ctx, &conn)
+	return err
+}
