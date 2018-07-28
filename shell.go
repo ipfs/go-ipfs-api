@@ -33,8 +33,11 @@ const (
 )
 
 var (
-	defaultShellAddr         string
-	defaultShellAddrLoadOnce sync.Once
+	localShell           *Shell
+	LocalShellError      error // Reading apiFile may raise this error.
+	localShellLoadOnce   sync.Once
+	defaultShell         *Shell
+	defaultShellLoadOnce sync.Once
 )
 
 type Shell struct {
@@ -42,29 +45,40 @@ type Shell struct {
 	httpcli *gohttp.Client
 }
 
-func NewLocalShell() *Shell {
+func newLocalShell() {
+	ipfsAPI := os.Getenv("IPFS_API")
+	if ipfsAPI != "" {
+		localShell = NewShell(strings.TrimSpace(ipfsAPI))
+		return
+	}
+
 	baseDir := os.Getenv(EnvDir)
 	if baseDir == "" {
 		baseDir = DefaultPathRoot
 	}
 
-	baseDir, err := homedir.Expand(baseDir)
-	if err != nil {
-		return nil
-	}
-
 	apiFile := path.Join(baseDir, DefaultApiFile)
-
-	if _, err := os.Stat(apiFile); err != nil {
-		return nil
+	if apiFile, err := homedir.Expand(apiFile); err == nil {
+		if _, err := os.Stat(apiFile); err == nil {
+			api, err := ioutil.ReadFile(apiFile)
+			if err != nil {
+				LocalShellError = err
+				return
+			}
+			localShell = NewShell(strings.TrimSpace(string(api)))
+			return
+		}
 	}
 
-	api, err := ioutil.ReadFile(apiFile)
-	if err != nil {
-		return nil
-	}
+	localShell = NewShell(DefaultGateway)
+}
 
-	return NewShell(strings.TrimSpace(string(api)))
+// Try to obtain a new shell from the following sources, returns the first found one.
+// The sources are $IPFS_API, api file under $IPFS_PATH or ~/.ipfs and the default gateway.
+// Will ignore api file if it does not exist, but may rasie APIFileError if unable to read it.
+func NewLocalShell() *Shell {
+	localShellLoadOnce.Do(newLocalShell)
+	return localShell
 }
 
 func NewShell(url string) *Shell {
@@ -92,8 +106,9 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	}
 }
 
-// Load all shell urls with error checking
-func NewShellWithCheck(urls ...string) (*Shell, error) {
+// Try to obtain a working shell from the urls given in the arguments.
+// Returns the first working shell or returns nil when none of the urls works.
+func TryNewShell(urls ...string) *Shell {
 	encountered := map[string]struct{}{}
 	for _, url := range urls {
 		if _, ok := encountered[url]; !ok {
@@ -101,83 +116,21 @@ func NewShellWithCheck(urls ...string) (*Shell, error) {
 			sh := NewShell(url)
 			_, _, err := sh.Version()
 			if err == nil {
-				return sh, nil
+				return sh
 			}
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("No working server in %v", urls))
+	return nil
 }
 
-func NewShellFromDefaultGateway() (*Shell, error) {
-	return NewShellWithCheck(DefaultGateway)
+func getDefaultShell() {
+	defaultShell = TryNewShell(DefaultAPIAddr)
 }
 
-// Get all shell urls from api files
-func newShellFromAPIFiles(files ...string) (urls []string) {
-	for _, apifile := range files {
-		if data, err := ioutil.ReadFile(apifile); err == nil {
-			url := strings.Trim(string(data), "\n\t ")
-			urls = append(urls, url)
-		}
-	}
-	return
-}
-
-func NewShellFromAPIFiles(files ...string) (*Shell, error) {
-	return NewShellWithCheck(newShellFromAPIFiles(files...)...)
-}
-
-// Get api url from ~/.ipfs/api
-func newShellFromDefaultAPIFile() (urls []string) {
-	apifile, err := homedir.Expand(path.Join(DefaultPathRoot, DefaultApiFile))
-	if err != nil {
-		return urls
-	}
-	return newShellFromAPIFiles(apifile)
-}
-
-func NewShellFromDefaultAPIFile() (*Shell, error) {
-	return NewShellWithCheck(newShellFromDefaultAPIFile()...)
-}
-
-// get all shell urls from environmental variable IPFS_API and IPFS_PATH
-func newShellFromEnv() (urls []string) {
-	if ipfsAPI := os.Getenv("IPFS_API"); ipfsAPI != "" {
-		urls = append(urls, ipfsAPI)
-	}
-	if ipfsPath := os.Getenv("IPFS_PATH"); ipfsPath != "" {
-		apifile := path.Join(ipfsPath, DefaultApiFile)
-		urls = append(urls, newShellFromAPIFiles(apifile)...)
-	}
-	return
-}
-
-func NewShellFromEnv() (*Shell, error) {
-	return NewShellWithCheck(newShellFromEnv()...)
-}
-
-// Load working default shell address once
-func defaultShell() {
-	fmt.Println("ran defaultShell")
-	var urls []string
-	urls = append(urls, newShellFromEnv()...)
-	urls = append(urls, newShellFromDefaultAPIFile()...)
-	urls = append(urls, DefaultAPIAddr, DefaultGateway)
-	if sh, err := NewShellWithCheck(urls...); err == nil {
-		defaultShellAddr = sh.url
-	}
-}
-
+// Get shell from the default api address, may return nil if it is not working.
 func DefaultShell() *Shell {
-	// Load once and cache working default shell address
-	defaultShellAddrLoadOnce.Do(defaultShell)
-	return NewShell(defaultShellAddr)
-}
-
-func DefaultShellWithCheck() (*Shell, error) {
-	// Load once and cache working default shell address
-	defaultShellAddrLoadOnce.Do(defaultShell)
-	return NewShellWithCheck(defaultShellAddr)
+	defaultShellLoadOnce.Do(getDefaultShell)
+	return defaultShell
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {

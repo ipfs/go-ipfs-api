@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"os"
 	"testing"
 	"time"
 
@@ -241,4 +242,40 @@ func TestDagPut(t *testing.T) {
 	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
 	is.Nil(err)
 	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
+}
+
+func TestNewLocalShell(t *testing.T) {
+	is := is.New(t)
+	shell1 := NewLocalShell()
+	err := LocalShellError
+	is.Nil(err)
+	is.NotNil(shell1)
+	ipfs_api := "mySimpleTest"
+	os.Setenv("IPFS_API", ipfs_api)
+	shell2 := NewLocalShell()
+	is.Nil(err)
+	is.NotNil(shell2)
+	//  NewLocalShell is guarded by a sync.Once
+	is.Equal(shell1, shell2)
+	// run newLocalShell one more time to make environmental variable take effects.
+	newLocalShell()
+	shell3 := NewLocalShell()
+	is.Equal(shell3.url, ipfs_api)
+}
+
+func TestDefaultShell(t *testing.T) {
+	is := is.New(t)
+	sh := DefaultShell()
+	is.NotNil(sh)
+	is.OK(sh.IsUp())
+}
+
+func TestTryNewShell(t *testing.T) {
+	is := is.New(t)
+	sh := TryNewShell(DefaultGateway, DefaultAPIAddr)
+	is.NotNil(sh)
+	is.Equal(sh.url, DefaultGateway)
+	is.OK(sh.IsUp())
+	sh = TryNewShell("some-nonexistent-URL")
+	is.Nil(sh)
 }
