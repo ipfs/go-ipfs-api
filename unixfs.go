@@ -2,7 +2,6 @@ package shell
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 )
 
@@ -26,19 +25,8 @@ type lsOutput struct {
 
 // FileList entries at the given path using the UnixFS commands
 func (s *Shell) FileList(path string) (*UnixLsObject, error) {
-	resp, err := s.newRequest(context.Background(), "file/ls", path).Send(s.httpcli)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Close()
-
-	if resp.Error != nil {
-		return nil, resp.Error
-	}
-
 	var out lsOutput
-	err = json.NewDecoder(resp.Output).Decode(&out)
-	if err != nil {
+	if err := s.Request("file/ls", path).Exec(context.Background(), &out); err != nil {
 		return nil, err
 	}
 

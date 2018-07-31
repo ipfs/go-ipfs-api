@@ -54,6 +54,12 @@
       "hash": "QmQine7gvHncNevKtG9QXxf3nXcwSj6aDDmMm52mHofEEp",
       "name": "tar-utils",
       "version": "0.0.3"
+    },
+    {
+      "author": "whyrusleeping",
+      "hash": "QmcoBbyTiL9PFjo1GFixJwqQ8mZLJ36CribuqyKmS1okPu",
+      "name": "go-libp2p-metrics",
+      "version": "2.1.3"
     }
   ],
   "gxVersion": "0.7.0",

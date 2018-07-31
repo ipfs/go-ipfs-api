@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io"
@@ -278,4 +279,16 @@ func TestTryNewShell(t *testing.T) {
 	is.OK(sh.IsUp())
 	sh = TryNewShell("some-nonexistent-URL")
 	is.Nil(sh)
+func TestStatsBW(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	_, err := s.StatsBW(context.Background())
+	is.Nil(err)
+}
+
+func TestSwarmPeers(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	_, err := s.SwarmPeers(context.Background())
+	is.Nil(err)
 }
