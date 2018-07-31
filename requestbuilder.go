@@ -90,7 +90,10 @@ func (r *RequestBuilder) Exec(ctx context.Context, res interface{}) error {
 
 	if res == nil {
 		httpRes.Close()
-		return httpRes.Error
+		if httpRes.Error != nil {
+			return httpRes.Error
+		}
+		return nil
 	}
 
 	return httpRes.Decode(res)
