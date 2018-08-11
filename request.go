@@ -55,6 +55,15 @@ func (r *Response) Close() error {
 	return nil
 }
 
+func (r *Response) Decode(dec interface{}) error {
+	defer r.Close()
+	if r.Error != nil {
+		return r.Error
+	}
+
+	return json.NewDecoder(r.Output).Decode(dec)
+}
+
 type Error struct {
 	Command string
 	Message string
