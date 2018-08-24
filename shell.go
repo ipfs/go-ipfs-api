@@ -541,7 +541,10 @@ func (s *Shell) PubSubPublish(topic, data string) (err error) {
 		return err
 	}
 	defer resp.Close()
-	return resp.Error
+	if resp.Error != nil {
+		return resp.Error
+	}
+	return nil
 }
 
 type ObjectStats struct {
