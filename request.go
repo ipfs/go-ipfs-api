@@ -115,18 +115,18 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		case contentType == "text/plain":
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response read error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response (%d) read error: %s\n", resp.StatusCode, err)
 			}
 			e.Message = string(out)
 		case contentType == "application/json":
 			if err = json.NewDecoder(resp.Body).Decode(e); err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response unmarshall error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response (%d) unmarshall error: %s\n", resp.StatusCode, err)
 			}
 		default:
-			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response encoding: %s", contentType)
+			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response (%d) encoding: %s", resp.StatusCode, contentType)
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: response read error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: response (%d) read error: %s\n", resp.StatusCode, err)
 			}
 			e.Message = fmt.Sprintf("unknown ipfs-shell error encoding: %q - %q", contentType, out)
 		}
