@@ -88,6 +88,11 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		return nil, err
 	}
 
+	// Add any headers that were supplied via the RequestBuilder.
+	for k, v := range r.Headers {
+		req.Header.Add(k, v)
+	}
+
 	if fr, ok := r.Body.(*files.MultiFileReader); ok {
 		req.Header.Set("Content-Type", "multipart/form-data; boundary="+fr.Boundary())
 		req.Header.Set("Content-Disposition", "form-data: name=\"files\"")
