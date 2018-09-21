@@ -15,9 +15,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmcZSzKEM5yDfpZbeEEZaVmaZ1zXm6JWTbrQZSB8hCVPzk",
+      "hash": "QmQsErDt8Qgw1XrsXf2BpEzDgGWtB1YLsTAARBup5b6B9W",
       "name": "go-libp2p-peer",
-      "version": "2.3.6"
+      "version": "2.3.7"
     },
     {
       "author": "multiformats",
@@ -57,9 +57,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmWne2EKHBvVpSTYuWuWch3D9KqAx78Te83UXWFKQDcksJ",
+      "hash": "QmdhwKw53CTV8EJSAsR1bpmMT5kXiWBgeAyv1EXeeDiXqR",
       "name": "go-libp2p-metrics",
-      "version": "2.1.4"
+      "version": "2.1.5"
     }
   ],
   "gxVersion": "0.7.0",
@@ -67,6 +67,6 @@
   "license": "MIT",
   "name": "go-ipfs-api",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "1.3.5"
+  "version": "1.3.6"
 }
 
