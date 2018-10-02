@@ -9,12 +9,6 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "QmRcFemyJ8JjkMhErTAapQqs411JxD6YQRbtCmwAfnGe24",
-      "name": "go-libp2p-pubsub",
-      "version": "0.1.1"
-    },
-    {
-      "author": "whyrusleeping",
       "hash": "QmQsErDt8Qgw1XrsXf2BpEzDgGWtB1YLsTAARBup5b6B9W",
       "name": "go-libp2p-peer",
       "version": "2.3.7"
