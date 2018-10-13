@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/cheekybits/is"
+	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
 	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
-	shellUrl     = "localhost:5001"
+	shellUrl     = "https://ipfs.infura.io:5001"
 )
 
 func TestAdd(t *testing.T) {
@@ -239,7 +240,7 @@ func TestDagPut(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
+	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor", options.Pin)
 	is.Nil(err)
 	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
 }
