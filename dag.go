@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	files "github.com/ipfs/go-ipfs-cmdkit/files"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {

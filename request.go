@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	files "github.com/ipfs/go-ipfs-cmdkit/files"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 type Request struct {
