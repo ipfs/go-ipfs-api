@@ -9,9 +9,9 @@
   "gxDependencies": [
     {
       "author": "whyrusleeping",
-      "hash": "QmQsErDt8Qgw1XrsXf2BpEzDgGWtB1YLsTAARBup5b6B9W",
+      "hash": "QmbNepETomvmXfz1X5pHNFD2QuPqnqi47dTd94QJWSorQ3",
       "name": "go-libp2p-peer",
-      "version": "2.3.7"
+      "version": "2.3.8"
     },
     {
       "author": "multiformats",
@@ -45,9 +45,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmdhwKw53CTV8EJSAsR1bpmMT5kXiWBgeAyv1EXeeDiXqR",
+      "hash": "QmNn6gcjBXpg8kccr9zEV7UVBpqAw8FZEiQ6DksvzyTQ5K",
       "name": "go-libp2p-metrics",
-      "version": "2.1.5"
+      "version": "2.1.6"
     },
     {
       "author": "magik6k",
@@ -61,6 +61,6 @@
   "license": "MIT",
   "name": "go-ipfs-api",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "1.4.0"
+  "version": "1.4.1"
 }
 
