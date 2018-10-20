@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	files "github.com/ipfs/go-ipfs-cmdkit/files"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 type Request struct {
@@ -88,6 +88,11 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		return nil, err
 	}
 
+	// Add any headers that were supplied via the RequestBuilder.
+	for k, v := range r.Headers {
+		req.Header.Add(k, v)
+	}
+
 	if fr, ok := r.Body.(*files.MultiFileReader); ok {
 		req.Header.Set("Content-Type", "multipart/form-data; boundary="+fr.Boundary())
 		req.Header.Set("Content-Disposition", "form-data: name=\"files\"")
@@ -115,18 +120,18 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		case contentType == "text/plain":
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response read error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response (%d) read error: %s\n", resp.StatusCode, err)
 			}
 			e.Message = string(out)
 		case contentType == "application/json":
 			if err = json.NewDecoder(resp.Body).Decode(e); err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response unmarshall error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response (%d) unmarshall error: %s\n", resp.StatusCode, err)
 			}
 		default:
-			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response encoding: %s", contentType)
+			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response (%d) encoding: %s", resp.StatusCode, contentType)
 			out, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "ipfs-shell: response read error: %s\n", err)
+				fmt.Fprintf(os.Stderr, "ipfs-shell: response (%d) read error: %s\n", resp.StatusCode, err)
 			}
 			e.Message = fmt.Sprintf("unknown ipfs-shell error encoding: %q - %q", contentType, out)
 		}
