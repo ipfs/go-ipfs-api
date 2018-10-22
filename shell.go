@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
@@ -29,6 +30,16 @@ const (
 	DefaultPathRoot = "~/" + DefaultPathName
 	DefaultApiFile  = "api"
 	EnvDir          = "IPFS_PATH"
+	DefaultGateway  = "https://ipfs.io"
+	DefaultAPIAddr  = "/ip4/127.0.0.1/tcp/5001"
+)
+
+var (
+	localShell           *Shell
+	LocalShellError      error // Reading apiFile may raise this error.
+	localShellLoadOnce   sync.Once
+	defaultShell         *Shell
+	defaultShellLoadOnce sync.Once
 )
 
 type Shell struct {
@@ -36,29 +47,40 @@ type Shell struct {
 	httpcli *gohttp.Client
 }
 
-func NewLocalShell() *Shell {
+func newLocalShell() {
+	ipfsAPI := os.Getenv("IPFS_API")
+	if ipfsAPI != "" {
+		localShell = NewShell(strings.TrimSpace(ipfsAPI))
+		return
+	}
+
 	baseDir := os.Getenv(EnvDir)
 	if baseDir == "" {
 		baseDir = DefaultPathRoot
 	}
 
-	baseDir, err := homedir.Expand(baseDir)
-	if err != nil {
-		return nil
-	}
-
 	apiFile := path.Join(baseDir, DefaultApiFile)
-
-	if _, err := os.Stat(apiFile); err != nil {
-		return nil
+	if apiFile, err := homedir.Expand(apiFile); err == nil {
+		if _, err := os.Stat(apiFile); err == nil {
+			api, err := ioutil.ReadFile(apiFile)
+			if err != nil {
+				LocalShellError = err
+				return
+			}
+			localShell = NewShell(strings.TrimSpace(string(api)))
+			return
+		}
 	}
 
-	api, err := ioutil.ReadFile(apiFile)
-	if err != nil {
-		return nil
-	}
+	localShell = NewShell(DefaultGateway)
+}
 
-	return NewShell(strings.TrimSpace(string(api)))
+// Try to obtain a new shell from the following sources, returns the first found one.
+// The sources are $IPFS_API, api file under $IPFS_PATH or ~/.ipfs and the default gateway.
+// Will ignore api file if it does not exist, but may rasie APIFileError if unable to read it.
+func NewLocalShell() *Shell {
+	localShellLoadOnce.Do(newLocalShell)
+	return localShell
 }
 
 func NewShell(url string) *Shell {
@@ -84,6 +106,33 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 		url:     url,
 		httpcli: c,
 	}
+}
+
+// Try to obtain a working shell from the urls given in the arguments.
+// Returns the first working shell or returns nil when none of the urls works.
+func TryNewShell(urls ...string) *Shell {
+	encountered := map[string]struct{}{}
+	for _, url := range urls {
+		if _, ok := encountered[url]; !ok {
+			encountered[url] = struct{}{}
+			sh := NewShell(url)
+			_, _, err := sh.Version()
+			if err == nil {
+				return sh
+			}
+		}
+	}
+	return nil
+}
+
+func getDefaultShell() {
+	defaultShell = TryNewShell(DefaultAPIAddr)
+}
+
+// Get shell from the default api address, may return nil if it is not working.
+func DefaultShell() *Shell {
+	defaultShellLoadOnce.Do(getDefaultShell)
+	return defaultShell
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {
