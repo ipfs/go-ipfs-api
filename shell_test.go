@@ -240,7 +240,8 @@ func TestDagPut(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor", options.Pin)
+	// c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
+	c, err := s.DagPutWithOpts(`{"x": "abc","y":"def"}`, options.Dag.Pin("true"))
 	is.Nil(err)
 	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
 }

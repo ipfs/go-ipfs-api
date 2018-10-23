@@ -5,8 +5,10 @@ type DagPutOption func(opts *DagPutOptions) error
 
 // DagPutOptions is a set of routing options
 type DagPutOptions struct {
-	Pin   string
-	Other map[interface{}]interface{}
+	Pin      string
+	InputEnc string
+	Kind     string
+	Other    map[interface{}]interface{}
 }
 
 // Apply applies the given options to this Options
@@ -33,9 +35,33 @@ func (opts *DagPutOptions) ToOption() DagPutOption {
 	}
 }
 
-// Expired is an option that tells the routing system to return expired records
-// when no newer records are known.
-var Pin DagPutOption = func(opts *DagPutOptions) error {
-	opts.Pin = "true"
-	return nil
+type dagOpts struct{}
+
+var Dag dagOpts
+
+// Pin is an option for Dag.Put which specifies whether to pin the added
+// dags. Default is false.
+func (dagOpts) Pin(pin string) DagPutOption {
+	return func(opts *DagPutOptions) error {
+		opts.Pin = pin
+		return nil
+	}
+}
+
+// InputEnc is an option for Dag.Put which specifies the input encoding of the
+// data. Default is "json", most formats/codecs support "raw".
+func (dagOpts) InputEnc(enc string) DagPutOption {
+	return func(opts *DagPutOptions) error {
+		opts.InputEnc = enc
+		return nil
+	}
+}
+
+// Kind is an option for Dag.Put which specifies the format that the dag
+// will be added as. Default is cbor.
+func (dagOpts) Kind(kind string) DagPutOption {
+	return func(opts *DagPutOptions) error {
+		opts.Kind = kind
+		return nil
+	}
 }

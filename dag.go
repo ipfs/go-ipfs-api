@@ -16,7 +16,11 @@ func (s *Shell) DagGet(ref string, out interface{}) error {
 	return s.Request("dag/get", ref).Exec(context.Background(), out)
 }
 
-func (s *Shell) DagPut(data interface{}, ienc, kind string, opts ...options.DagPutOption) (string, error) {
+func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
+	return s.DagPutWithOpts(data, options.Dag.InputEnc(ienc), options.Dag.Kind(kind))
+}
+
+func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (string, error) {
 	var cfg options.DagPutOptions
 	if err := cfg.Apply(opts...); err != nil {
 		return "", err
@@ -24,6 +28,14 @@ func (s *Shell) DagPut(data interface{}, ienc, kind string, opts ...options.DagP
 
 	if cfg.Pin == "" {
 		cfg.Pin = "false"
+	}
+
+	if cfg.InputEnc == "" {
+		cfg.InputEnc = "json"
+	}
+
+	if cfg.Kind == "" {
+		cfg.Kind = "cbor"
 	}
 
 	var r io.Reader
@@ -49,10 +61,11 @@ func (s *Shell) DagPut(data interface{}, ienc, kind string, opts ...options.DagP
 		}
 	}
 
+	fmt.Println("cfg.Kind", cfg.Kind)
 	return out.Cid.Target, s.
 		Request("dag/put").
-		Option("input-enc", ienc).
-		Option("format", kind).
+		Option("input-enc", cfg.InputEnc).
+		Option("format", cfg.Kind).
 		Option("pin", cfg.Pin).
 		Body(fileReader).
 		Exec(context.Background(), &out)
