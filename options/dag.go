@@ -1,38 +1,30 @@
 package options
 
-// DagPutOption is a single routing option.
-type DagPutOption func(opts *DagPutOptions) error
-
-// DagPutOptions is a set of routing options
-type DagPutOptions struct {
-	Pin      string
+// DagPutSettings is a set of DagPut options.
+type DagPutSettings struct {
 	InputEnc string
 	Kind     string
-	Other    map[interface{}]interface{}
+	Pin      string
 }
 
-// Apply applies the given options to this Options
-func (opts *DagPutOptions) Apply(options ...DagPutOption) error {
-	for _, o := range options {
-		if err := o(opts); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// DagPutOption is a single DagPut option.
+type DagPutOption func(opts *DagPutSettings) error
 
-// ToOption converts this Options to a single Option.
-func (opts *DagPutOptions) ToOption() DagPutOption {
-	return func(nopts *DagPutOptions) error {
-		*nopts = *opts
-		if opts.Other != nil {
-			nopts.Other = make(map[interface{}]interface{}, len(opts.Other))
-			for k, v := range opts.Other {
-				nopts.Other[k] = v
-			}
-		}
-		return nil
+// DagPutOptions applies the given options to a DagPutSettings instance.
+func DagPutOptions(opts ...DagPutOption) (*DagPutSettings, error) {
+	options := &DagPutSettings{
+		InputEnc: "json",
+		Kind:     "cbor",
+		Pin:      "false",
 	}
+
+	for _, opt := range opts {
+		err := opt(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return options, nil
 }
 
 type dagOpts struct{}
@@ -42,7 +34,7 @@ var Dag dagOpts
 // Pin is an option for Dag.Put which specifies whether to pin the added
 // dags. Default is false.
 func (dagOpts) Pin(pin string) DagPutOption {
-	return func(opts *DagPutOptions) error {
+	return func(opts *DagPutSettings) error {
 		opts.Pin = pin
 		return nil
 	}
@@ -51,7 +43,7 @@ func (dagOpts) Pin(pin string) DagPutOption {
 // InputEnc is an option for Dag.Put which specifies the input encoding of the
 // data. Default is "json", most formats/codecs support "raw".
 func (dagOpts) InputEnc(enc string) DagPutOption {
-	return func(opts *DagPutOptions) error {
+	return func(opts *DagPutSettings) error {
 		opts.InputEnc = enc
 		return nil
 	}
@@ -60,7 +52,7 @@ func (dagOpts) InputEnc(enc string) DagPutOption {
 // Kind is an option for Dag.Put which specifies the format that the dag
 // will be added as. Default is cbor.
 func (dagOpts) Kind(kind string) DagPutOption {
-	return func(opts *DagPutOptions) error {
+	return func(opts *DagPutSettings) error {
 		opts.Kind = kind
 		return nil
 	}

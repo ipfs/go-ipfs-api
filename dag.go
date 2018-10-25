@@ -21,21 +21,9 @@ func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
 }
 
 func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (string, error) {
-	var cfg options.DagPutOptions
-	if err := cfg.Apply(opts...); err != nil {
+	cfg, err := options.DagPutOptions(opts...)
+	if err != nil {
 		return "", err
-	}
-
-	if cfg.Pin == "" {
-		cfg.Pin = "false"
-	}
-
-	if cfg.InputEnc == "" {
-		cfg.InputEnc = "json"
-	}
-
-	if cfg.Kind == "" {
-		cfg.Kind = "cbor"
 	}
 
 	var r io.Reader
@@ -61,7 +49,6 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 		}
 	}
 
-	fmt.Println("cfg.Kind", cfg.Kind)
 	return out.Cid.Target, s.
 		Request("dag/put").
 		Option("input-enc", cfg.InputEnc).
