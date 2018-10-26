@@ -32,7 +32,7 @@ type dagOpts struct{}
 var Dag dagOpts
 
 // Pin is an option for Dag.Put which specifies whether to pin the added
-// dags. Default is false.
+// dags. Default is "false".
 func (dagOpts) Pin(pin string) DagPutOption {
 	return func(opts *DagPutSettings) error {
 		opts.Pin = pin
@@ -50,7 +50,7 @@ func (dagOpts) InputEnc(enc string) DagPutOption {
 }
 
 // Kind is an option for Dag.Put which specifies the format that the dag
-// will be added as. Default is cbor.
+// will be added as. Default is "cbor".
 func (dagOpts) Kind(kind string) DagPutOption {
 	return func(opts *DagPutSettings) error {
 		opts.Kind = kind
