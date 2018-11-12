@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/ipfs/go-ipfs-api/options"
 	files "github.com/ipfs/go-ipfs-files"
 )
 
@@ -16,6 +17,15 @@ func (s *Shell) DagGet(ref string, out interface{}) error {
 }
 
 func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
+	return s.DagPutWithOpts(data, options.Dag.InputEnc(ienc), options.Dag.Kind(kind))
+}
+
+func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (string, error) {
+	cfg, err := options.DagPutOptions(opts...)
+	if err != nil {
+		return "", err
+	}
+
 	var r io.Reader
 	switch data := data.(type) {
 	case string:
@@ -41,8 +51,9 @@ func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
 
 	return out.Cid.Target, s.
 		Request("dag/put").
-		Option("input-enc", ienc).
-		Option("format", kind).
+		Option("input-enc", cfg.InputEnc).
+		Option("format", cfg.Kind).
+		Option("pin", cfg.Pin).
 		Body(fileReader).
 		Exec(context.Background(), &out)
 }
