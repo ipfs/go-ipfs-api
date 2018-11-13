@@ -28,6 +28,26 @@ func TestAdd(t *testing.T) {
 	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
 }
 
+func TestAddWithCat(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	s.SetTimeout(1 * time.Second)
+
+	rand := randString(32)
+
+	mhash, err := s.Add(bytes.NewBufferString(rand))
+	is.Nil(err)
+
+	reader, err := s.Cat(mhash)
+	is.Nil(err)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(reader)
+	catRand := buf.String()
+
+	is.Equal(rand, catRand)
+}
+
 func TestAddDir(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
