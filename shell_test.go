@@ -48,6 +48,20 @@ func TestAddWithCat(t *testing.T) {
 	is.Equal(rand, catRand)
 }
 
+func TestAddOnlyHash(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	s.SetTimeout(1 * time.Second)
+
+	rand := randString(32)
+
+	mhash, err := s.AddOnlyHash(bytes.NewBufferString(rand))
+	is.Nil(err)
+
+	_, err = s.Cat(mhash)
+	is.Err(err) // we expect an http timeout error because `cat` won't find the `rand` string
+}
+
 func TestAddDir(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
