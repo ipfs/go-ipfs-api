@@ -141,15 +141,20 @@ type object struct {
 
 // Add a file to ipfs from the given reader, returns the hash of the added file
 func (s *Shell) Add(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, true, false)
+	return s.AddWithOpts(r, true, false, false)
+}
+
+// AddOnlyHash returns the hash of the file without adding it to ipfs
+func (s *Shell) AddOnlyHash(r io.Reader) (string, error) {
+	return s.AddWithOpts(r, false, false, true)
 }
 
 // AddNoPin a file to ipfs from the given reader, returns the hash of the added file without pinning the file
 func (s *Shell) AddNoPin(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, false, false)
+	return s.AddWithOpts(r, false, false, false)
 }
 
-func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, error) {
+func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool, onlyHash bool) (string, error) {
 	var rc io.ReadCloser
 	if rclose, ok := r.(io.ReadCloser); ok {
 		rc = rclose
@@ -167,6 +172,7 @@ func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, erro
 		Option("progress", false).
 		Option("pin", pin).
 		Option("raw-leaves", rawLeaves).
+		Option("only-hash", onlyHash).
 		Body(fileReader).
 		Exec(context.Background(), &out)
 }
