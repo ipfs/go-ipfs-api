@@ -55,7 +55,7 @@ func TestAddOnlyHash(t *testing.T) {
 
 	rand := randString(32)
 
-	mhash, err := s.AddOnlyHash(bytes.NewBufferString(rand))
+	mhash, err := s.Add(bytes.NewBufferString(rand), OnlyHash(true))
 	is.Nil(err)
 
 	_, err = s.Cat(mhash)

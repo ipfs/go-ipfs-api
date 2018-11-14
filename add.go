@@ -16,22 +16,31 @@ type object struct {
 	Hash string
 }
 
-// Add a file to ipfs from the given reader, returns the hash of the added file
-func (s *Shell) Add(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, true, false, false)
+func OnlyHash(enabled bool) func(*RequestBuilder) *RequestBuilder {
+	return func(rb *RequestBuilder) *RequestBuilder {
+		return rb.Option("only-hash", enabled)
+	}
 }
 
-// AddOnlyHash returns the hash of the file without adding it to ipfs
-func (s *Shell) AddOnlyHash(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, true, false, true)
+func Pin(enabled bool) func(*RequestBuilder) *RequestBuilder {
+	return func(rb *RequestBuilder) *RequestBuilder {
+		return rb.Option("pin", enabled)
+	}
 }
 
-// AddNoPin a file to ipfs from the given reader, returns the hash of the added file without pinning the file
-func (s *Shell) AddNoPin(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, false, false, false)
+func Progress(enabled bool) func(*RequestBuilder) *RequestBuilder {
+	return func(rb *RequestBuilder) *RequestBuilder {
+		return rb.Option("progress", enabled)
+	}
 }
 
-func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool, onlyHash bool) (string, error) {
+func RawLeaves(enabled bool) func(*RequestBuilder) *RequestBuilder {
+	return func(rb *RequestBuilder) *RequestBuilder {
+		return rb.Option("raw-leaves", enabled)
+	}
+}
+
+func (s *Shell) Add(r io.Reader, options ...func(*RequestBuilder) *RequestBuilder) (string, error) {
 	var rc io.ReadCloser
 	if rclose, ok := r.(io.ReadCloser); ok {
 		rc = rclose
@@ -39,19 +48,16 @@ func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool, onlyHash bool
 		rc = ioutil.NopCloser(r)
 	}
 
-	// handler expects an array of files
 	fr := files.NewReaderFile("", "", rc, nil)
 	slf := files.NewSliceFile("", "", []files.File{fr})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out object
-	return out.Hash, s.Request("add").
-		Option("progress", false).
-		Option("pin", pin).
-		Option("raw-leaves", rawLeaves).
-		Option("only-hash", onlyHash).
-		Body(fileReader).
-		Exec(context.Background(), &out)
+	rb := s.Request("add")
+	for _, option := range options {
+		rb = option(rb)
+	}
+	return out.Hash, rb.Body(fileReader).Exec(context.Background(), &out)
 }
 
 func (s *Shell) AddLink(target string) (string, error) {
