@@ -146,7 +146,7 @@ func (s *Shell) Add(r io.Reader) (string, error) {
 
 // AddOnlyHash returns the hash of the file without adding it to ipfs
 func (s *Shell) AddOnlyHash(r io.Reader) (string, error) {
-	return s.AddWithOpts(r, false, false, true)
+	return s.AddWithOpts(r, true, false, true)
 }
 
 // AddNoPin a file to ipfs from the given reader, returns the hash of the added file without pinning the file
