@@ -62,6 +62,20 @@ func TestAddOnlyHash(t *testing.T) {
 	is.Err(err) // we expect an http timeout error because `cat` won't find the `rand` string
 }
 
+func TestAddNoPin(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	h, err := s.Add(bytes.NewBufferString(randString(32)), Pin(false))
+	is.Nil(err)
+
+	pins, err := s.Pins()
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.False(ok)
+}
+
 func TestAddDir(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
