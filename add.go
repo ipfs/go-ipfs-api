@@ -60,6 +60,18 @@ func (s *Shell) Add(r io.Reader, options ...func(*RequestBuilder) *RequestBuilde
 	return out.Hash, rb.Body(fileReader).Exec(context.Background(), &out)
 }
 
+// AddNoPin adds a file to ipfs without pinning it
+// Deprecated: Use Add() with option functions instead
+func (s *Shell) AddNoPin(r io.Reader) (string, error) {
+	return s.Add(r, Pin(false))
+}
+
+// AddWithOpts adds a file to ipfs with some additional options
+// Deprecated: Use Add() with option functions instead
+func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, error) {
+	return s.Add(r, Pin(pin), RawLeaves(rawLeaves))
+}
+
 func (s *Shell) AddLink(target string) (string, error) {
 	link := files.NewLinkFile("", "", target, nil)
 	slf := files.NewSliceFile("", "", []files.File{link})

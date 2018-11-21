@@ -76,6 +76,20 @@ func TestAddNoPin(t *testing.T) {
 	is.False(ok)
 }
 
+func TestAddNoPinDeprecated(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	h, err := s.AddNoPin(bytes.NewBufferString(randString(32)))
+	is.Nil(err)
+
+	pins, err := s.Pins()
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.False(ok)
+}
+
 func TestAddDir(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
