@@ -16,31 +16,35 @@ type object struct {
 	Hash string
 }
 
-func OnlyHash(enabled bool) func(*RequestBuilder) *RequestBuilder {
-	return func(rb *RequestBuilder) *RequestBuilder {
-		return rb.Option("only-hash", enabled)
+func OnlyHash(enabled bool) func(*RequestBuilder) error {
+	return func(rb *RequestBuilder) error {
+		rb.Option("only-hash", enabled)
+		return nil
 	}
 }
 
-func Pin(enabled bool) func(*RequestBuilder) *RequestBuilder {
-	return func(rb *RequestBuilder) *RequestBuilder {
-		return rb.Option("pin", enabled)
+func Pin(enabled bool) func(*RequestBuilder) error {
+	return func(rb *RequestBuilder) error {
+		rb.Option("pin", enabled)
+		return nil
 	}
 }
 
-func Progress(enabled bool) func(*RequestBuilder) *RequestBuilder {
-	return func(rb *RequestBuilder) *RequestBuilder {
-		return rb.Option("progress", enabled)
+func Progress(enabled bool) func(*RequestBuilder) error {
+	return func(rb *RequestBuilder) error {
+		rb.Option("progress", enabled)
+		return nil
 	}
 }
 
-func RawLeaves(enabled bool) func(*RequestBuilder) *RequestBuilder {
-	return func(rb *RequestBuilder) *RequestBuilder {
-		return rb.Option("raw-leaves", enabled)
+func RawLeaves(enabled bool) func(*RequestBuilder) error {
+	return func(rb *RequestBuilder) error {
+		rb.Option("raw-leaves", enabled)
+		return nil
 	}
 }
 
-func (s *Shell) Add(r io.Reader, options ...func(*RequestBuilder) *RequestBuilder) (string, error) {
+func (s *Shell) Add(r io.Reader, options ...func(*RequestBuilder) error) (string, error) {
 	var rc io.ReadCloser
 	if rclose, ok := r.(io.ReadCloser); ok {
 		rc = rclose
@@ -55,7 +59,7 @@ func (s *Shell) Add(r io.Reader, options ...func(*RequestBuilder) *RequestBuilde
 	var out object
 	rb := s.Request("add")
 	for _, option := range options {
-		rb = option(rb)
+		option(rb)
 	}
 	return out.Hash, rb.Body(fileReader).Exec(context.Background(), &out)
 }
