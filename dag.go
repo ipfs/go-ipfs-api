@@ -39,9 +39,12 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 	}
 
 	rc := ioutil.NopCloser(r)
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fr := files.NewReaderFile(rc, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	var out struct {
 		Cid struct {

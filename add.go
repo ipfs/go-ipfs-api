@@ -54,9 +54,12 @@ func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 		rc = ioutil.NopCloser(r)
 	}
 
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fr := files.NewReaderFile(rc, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	rb := s.Request("add")
@@ -79,9 +82,12 @@ func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, erro
 }
 
 func (s *Shell) AddLink(target string) (string, error) {
-	link := files.NewLinkFile("", "", target, nil)
-	slf := files.NewSliceFile("", "", []files.File{link})
-	reader := files.NewMultiFileReader(slf, true)
+	link := files.NewLinkFile(target, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", link)})
+	reader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("add").Body(reader).Exec(context.Background(), &out)
@@ -94,12 +100,12 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		return "", err
 	}
 
-	sf, err := files.NewSerialFile(path.Base(dir), dir, false, stat)
+	sf, err := files.NewSerialFile(dir, false, stat)
 	if err != nil {
 		return "", err
 	}
-	slf := files.NewSliceFile("", dir, []files.File{sf})
-	reader := files.NewMultiFileReader(slf, true)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry(path.Base(dir), sf)})
+	reader, err := files.NewMultiFileReader(slf, true)
 
 	resp, err := s.Request("add").
 		Option("recursive", true).

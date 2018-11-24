@@ -278,9 +278,13 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 		cmd = "set-data"
 	}
 
-	fr := files.NewReaderFile("", "", ioutil.NopCloser(read), nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	rc := ioutil.NopCloser(read)
+	fr := files.NewReaderFile(rc, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("object/patch/"+cmd, root).
@@ -382,9 +386,12 @@ func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string
 
 	data := bytes.NewReader(block)
 	rc := ioutil.NopCloser(data)
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fr := files.NewReaderFile(rc, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	return out.Key, s.Request("block/put").
 		Option("mhtype", mhtype).
@@ -421,9 +428,12 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 	rc := ioutil.NopCloser(&data)
 
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fr := files.NewReaderFile(rc, nil)
+	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader, err := files.NewMultiFileReader(slf, true)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("object/put").
