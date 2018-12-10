@@ -5,11 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/ipfs/go-ipfs-api/options"
-	files "github.com/ipfs/go-ipfs-files"
+	"github.com/ipfs/go-ipfs-files"
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {
@@ -38,13 +37,9 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 		return "", fmt.Errorf("cannot current handle putting values of type %T", data)
 	}
 
-	rc := ioutil.NopCloser(r)
-	fr := files.NewReaderFile(rc, nil)
-	slf := files.NewSliceFile([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader, err := files.NewMultiFileReader(slf, true)
-	if err != nil {
-		return "", err
-	}
+	fr := files.NewReaderFile(r)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out struct {
 		Cid struct {
