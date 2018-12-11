@@ -291,7 +291,7 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 func (s *Shell) PatchLink(root, path, childhash string, create bool) (string, error) {
 	var out object
 	return out.Hash, s.Request("object/patch/add-link", root, path, childhash).
-		Option("create", true).
+		Option("create", create).
 		Exec(context.Background(), &out)
 }
 
