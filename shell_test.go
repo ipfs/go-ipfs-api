@@ -223,10 +223,19 @@ func TestPatch_rmLink(t *testing.T) {
 func TestPatchLink(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
-
 	newRoot, err := s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", true)
 	is.Nil(err)
 	is.Equal(newRoot, "QmVfe7gesXf4t9JzWePqqib8QSifC1ypRBGeJHitSnF7fA")
+	newRoot, err = s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", false)
+	is.Nil(err)
+	is.Equal(newRoot, "QmVfe7gesXf4t9JzWePqqib8QSifC1ypRBGeJHitSnF7fA")
+	newHash, err := s.NewObject("unixfs-dir")
+	is.Nil(err)
+	_, err = s.PatchLink(newHash, "a/b/c", newHash, false)
+	is.NotNil(err)
+	newHash, err = s.PatchLink(newHash, "a/b/c", newHash, true)
+	is.Nil(err)
+	is.Equal(newHash, "QmQ5D3xbMWFQRC9BKqbvnSnHri31GqvtWG1G6rE8xAZf1J")
 }
 
 func TestResolvePath(t *testing.T) {
