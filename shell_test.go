@@ -6,10 +6,12 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/cheekybits/is"
+	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
@@ -24,6 +26,68 @@ func TestAdd(t *testing.T) {
 	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
 	is.Nil(err)
 	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+}
+
+func TestAddWithCat(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	s.SetTimeout(1 * time.Second)
+
+	rand := randString(32)
+
+	mhash, err := s.Add(bytes.NewBufferString(rand))
+	is.Nil(err)
+
+	reader, err := s.Cat(mhash)
+	is.Nil(err)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(reader)
+	catRand := buf.String()
+
+	is.Equal(rand, catRand)
+}
+
+func TestAddOnlyHash(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	s.SetTimeout(1 * time.Second)
+
+	rand := randString(32)
+
+	mhash, err := s.Add(bytes.NewBufferString(rand), OnlyHash(true))
+	is.Nil(err)
+
+	_, err = s.Cat(mhash)
+	is.Err(err) // we expect an http timeout error because `cat` won't find the `rand` string
+}
+
+func TestAddNoPin(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	h, err := s.Add(bytes.NewBufferString(randString(32)), Pin(false))
+	is.Nil(err)
+
+	pins, err := s.Pins()
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.False(ok)
+}
+
+func TestAddNoPinDeprecated(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	h, err := s.AddNoPin(bytes.NewBufferString(randString(32)))
+	is.Nil(err)
+
+	pins, err := s.Pins()
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.False(ok)
 }
 
 func TestAddDir(t *testing.T) {
@@ -244,6 +308,15 @@ func TestDagPut(t *testing.T) {
 	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
 }
 
+func TestDagPutWithOpts(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	c, err := s.DagPutWithOpts(`{"x": "abc","y":"def"}`, options.Dag.Pin("true"))
+	is.Nil(err)
+	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
+}
+
 func TestStatsBW(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
@@ -256,4 +329,31 @@ func TestSwarmPeers(t *testing.T) {
 	s := NewShell(shellUrl)
 	_, err := s.SwarmPeers(context.Background())
 	is.Nil(err)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+func randString(n int) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }
