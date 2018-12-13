@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
-	files "github.com/ipfs/go-ipfs-files"
+	"github.com/ipfs/go-ipfs-files"
 )
 
 type object struct {
@@ -47,16 +46,9 @@ func RawLeaves(enabled bool) AddOpts {
 }
 
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
-	var rc io.ReadCloser
-	if rclose, ok := r.(io.ReadCloser); ok {
-		rc = rclose
-	} else {
-		rc = ioutil.NopCloser(r)
-	}
-
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fr := files.NewReaderFile(r)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader:= files.NewMultiFileReader(slf, true)
 
 	var out object
 	rb := s.Request("add")
@@ -79,8 +71,8 @@ func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, erro
 }
 
 func (s *Shell) AddLink(target string) (string, error) {
-	link := files.NewLinkFile("", "", target, nil)
-	slf := files.NewSliceFile("", "", []files.File{link})
+	link := files.NewLinkFile(target, nil)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", link)})
 	reader := files.NewMultiFileReader(slf, true)
 
 	var out object
@@ -94,18 +86,17 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		return "", err
 	}
 
-	sf, err := files.NewSerialFile(path.Base(dir), dir, false, stat)
+	sf, err := files.NewSerialFile(dir, false, stat)
 	if err != nil {
 		return "", err
 	}
-	slf := files.NewSliceFile("", dir, []files.File{sf})
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(path.Base(dir), sf)})
 	reader := files.NewMultiFileReader(slf, true)
 
 	resp, err := s.Request("add").
 		Option("recursive", true).
 		Body(reader).
 		Send(context.Background())
-
 	if err != nil {
 		return "", nil
 	}
