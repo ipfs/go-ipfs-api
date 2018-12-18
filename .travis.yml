@@ -3,7 +3,7 @@ sudo: required
 language: go
 
 go:
-  - 1.10.x
+  - 1.11.x
 
 env:
   - IPFS_PATH=/tmp/ipfs
@@ -21,6 +21,7 @@ before_install:
 - docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master --enable-pubsub-experiment
 
 install:
+  - make deps
   - go get -t -v ./...
 
 script:
@@ -28,3 +29,7 @@ script:
 
 notifications:
   email: false
+
+cache:
+  directories:
+    - $GOPATH/src/gx
