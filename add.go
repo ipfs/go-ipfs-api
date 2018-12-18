@@ -48,7 +48,7 @@ func RawLeaves(enabled bool) AddOpts {
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 	fr := files.NewReaderFile(r)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader:= files.NewMultiFileReader(slf, true)
+	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out object
 	rb := s.Request("add")
