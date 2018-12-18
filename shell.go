@@ -421,7 +421,6 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
 
-
 	var out object
 	return out.Hash, s.Request("object/put").
 		Body(fileReader).
