@@ -46,7 +46,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "error: %s", err)
         os.Exit(1)
 	}
-    fmt.Println("added %s", cid)
+    fmt.Printf("added %s", cid)
 }
 ```
 
