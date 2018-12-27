@@ -31,10 +31,11 @@ Add a file with the contents "hello world!":
 package main
 
 import (
+	"fmt"
 	"strings"
-    "os"
+    	"os"
 
-    shell "github.com/ipfs/go-ipfs-api"
+    	shell "github.com/ipfs/go-ipfs-api"
 )
 
 func main() {
