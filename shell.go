@@ -290,8 +290,8 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 		cmd = "set-data"
 	}
 
-	fr := files.NewReaderFile("", "", ioutil.NopCloser(read), nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
+	fr := files.NewReaderFile(read)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out object
@@ -392,10 +392,8 @@ func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string
 		Key string
 	}
 
-	data := bytes.NewReader(block)
-	rc := ioutil.NopCloser(data)
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
+	fr := files.NewBytesFile(block)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	return out.Key, s.Request("block/put").
@@ -431,10 +429,8 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 		return "", err
 	}
 
-	rc := ioutil.NopCloser(&data)
-
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
+	fr := files.NewReaderFile(&data)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out object

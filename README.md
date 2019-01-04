@@ -31,10 +31,11 @@ Add a file with the contents "hello world!":
 package main
 
 import (
+	"fmt"
 	"strings"
-    "os"
+    	"os"
 
-    shell "github.com/ipfs/go-ipfs-api"
+    	shell "github.com/ipfs/go-ipfs-api"
 )
 
 func main() {
@@ -45,7 +46,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "error: %s", err)
         os.Exit(1)
 	}
-    fmt.Println("added %s", cid)
+    fmt.Printf("added %s", cid)
 }
 ```
 
