@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/RTradeLtd/go-ipfs-api/options"
@@ -38,9 +37,8 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 		return "", fmt.Errorf("cannot current handle putting values of type %T", data)
 	}
 
-	rc := ioutil.NopCloser(r)
-	fr := files.NewReaderFile("", "", rc, nil)
-	slf := files.NewSliceFile("", "", []files.File{fr})
+	fr := files.NewReaderFile(r)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	var out struct {
