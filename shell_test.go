@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RTradeLtd/go-ipfs-api/options"
 	"github.com/cheekybits/is"
-	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
