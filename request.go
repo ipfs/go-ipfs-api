@@ -34,7 +34,7 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 		"stream-channels": "true",
 	}
 	return &Request{
-		ApiBase: path.Join(url, "/api/v0"),
+		ApiBase: url + "/api/v0",
 		Command: command,
 		Args:    args,
 		Opts:    opts,
