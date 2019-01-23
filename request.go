@@ -36,6 +36,7 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 		Command: command,
 		Args:    args,
 		Opts:    opts,
+		Headers: make(map[string]string),
 	}
 }
 
