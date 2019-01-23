@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 
 	files "github.com/ipfs/go-ipfs-files"
@@ -28,7 +27,6 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 	if !strings.HasPrefix(url, "http") {
 		url = "http://" + url
 	}
-
 	opts := map[string]string{
 		"encoding":        "json",
 		"stream-channels": "true",
