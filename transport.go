@@ -15,6 +15,6 @@ func newAuthenticatedTransport(tr http.RoundTripper, token string) *transport {
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "token "+t.token)
+	req.Header.Set("Authorization", "Bearer "+t.token)
 	return t.httptr.RoundTrip(req)
 }
