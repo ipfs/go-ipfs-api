@@ -33,6 +33,7 @@ const (
 
 type Shell struct {
 	url     string
+	token   string
 	httpcli *gohttp.Client
 }
 
@@ -102,6 +103,22 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	return &Shell{
 		url:     url,
 		httpcli: c,
+	}
+}
+
+// WithAuthorization returns a Shell that sets the provided token to be used as
+// an Authorization header in API requests. For example:
+//
+//    resp, err := NewDirectShell(addr).
+//        WithAuthorization(token).
+//        Cat(hash)
+//
+func (s *Shell) WithAuthorization(token string) *Shell {
+	return &Shell{
+		url: s.url,
+		httpcli: &gohttp.Client{
+			Transport: newAuthenticatedTransport(s.httpcli.Transport, token),
+		},
 	}
 }
 
