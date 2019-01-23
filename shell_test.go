@@ -409,6 +409,36 @@ func TestPins(t *testing.T) {
 	is.Equal(info.Type, RecursivePin)
 }
 
+// Runs ipfs pin update
+func TestPinUpdate(t *testing.T) {
+	var (
+		oldPin          = "zb2rheJDzFsa7AsCnSxKimX8eF5wkjriJqeGBamjQF79vr14R"
+		newPin          = "QmbB6M914rwm9ZezVd2u8Y2k4g5TRoWWxP3PYKkDipCzpT"
+		expectedOldPath = "/ipfs/zb2rheJDzFsa7AsCnSxKimX8eF5wkjriJqeGBamjQF79vr14R"
+		expectedNewPath = "/ipfs/QmbB6M914rwm9ZezVd2u8Y2k4g5TRoWWxP3PYKkDipCzpT"
+	)
+	s := NewShell(shellUrl)
+	if err := s.Pin(oldPin); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Pin(newPin); err != nil {
+		t.Fatal(err)
+	}
+	out, err := s.PinUpdate(oldPin, newPin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out) == 0 {
+		t.Fatal("bad output")
+	}
+	if out["Pins"][0] != expectedOldPath {
+		t.Fatal("failed to calculate old pin path")
+	}
+	if out["Pins"][1] != expectedNewPath {
+		t.Fatal("failed to calculate new pin path")
+	}
+}
+
 func TestPatch_rmLink(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
