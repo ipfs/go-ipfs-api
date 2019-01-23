@@ -25,7 +25,11 @@ install:
   - go get -t -v ./...
 
 script:
-  - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
+  - go test -race -short -coverprofile=coverage.txt ./...
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
 
 notifications:
   email: false
