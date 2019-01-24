@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -592,4 +593,32 @@ func randString(n int) string {
 	}
 
 	return string(b)
+}
+
+func TestRefs(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	cid, err := s.AddDir("./testdata")
+	is.Nil(err)
+	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
+	refs, err := s.Refs(cid, false)
+	is.Nil(err)
+	expected := []string{
+		"QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V",
+		"QmYCvbfNbCwFR45HiNP45rwJgvatpiW38D961L5qAhUM5Y",
+		"QmY5heUM5qgRubMDD1og9fhCPA6QdkMp3QCwd4s7gJsyE7",
+		"QmejvEPop4D7YUadeGqYWmZxHhLc4JBUCzJJHWMzdcMe2y",
+		"QmXgqKTbzdh83pQtKFb19SpMCpDDcKR2ujqk3pKph9aCNF",
+		"QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB",
+		"QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm",
+	}
+	var actual []string
+	for r := range refs {
+		actual = append(actual, r)
+	}
+
+	sort.Strings(expected)
+	sort.Strings(actual)
+	is.Equal(expected, actual)
 }

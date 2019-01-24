@@ -283,13 +283,14 @@ func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
 		return nil, err
 	}
 
-	defer resp.Close()
 	if resp.Error != nil {
+		resp.Close()
 		return nil, resp.Error
 	}
 
 	out := make(chan string)
 	go func() {
+		defer resp.Close()
 		var ref struct {
 			Ref string
 		}
