@@ -602,7 +602,7 @@ func TestRefs(t *testing.T) {
 	cid, err := s.AddDir("./testdata")
 	is.Nil(err)
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
-	refs, err := s.Refs(cid, false)
+	refs, err := s.Refs(cid, false, false)
 	is.Nil(err)
 	expected := []string{
 		"QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V",

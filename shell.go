@@ -275,9 +275,10 @@ func (s *Shell) FindPeer(peer string) (*PeerInfo, error) {
 	return &peers.Responses[0], nil
 }
 
-func (s *Shell) Refs(hash string, recursive bool) (<-chan string, error) {
+func (s *Shell) Refs(hash string, recursive, unique bool) (<-chan string, error) {
 	resp, err := s.Request("refs", hash).
 		Option("recursive", recursive).
+		Option("unique", unique).
 		Send(context.Background())
 	if err != nil {
 		return nil, err
