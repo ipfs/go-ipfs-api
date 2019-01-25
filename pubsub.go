@@ -2,12 +2,10 @@ package shell
 
 import (
 	"encoding/json"
-
-	"github.com/libp2p/go-libp2p-peer"
 )
 
 type Message struct {
-	From     peer.ID  `json:"from,omitempty"`
+	From     []byte  `json:"from,omitempty"`
 	Data     []byte   `json:"data,omitempty"`
 	Seqno    []byte   `json:"seqno,omitempty"`
 	TopicIDs []string `json:"topicIDs,omitempty"`
@@ -36,6 +34,9 @@ func (s *PubSubSubscription) Next() (*Message, error) {
 
 	var r Message
 	err := d.Decode(&r)
+	if err != nil {
+		return nil, err
+	}
 
 	return &r, err
 }
