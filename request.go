@@ -3,6 +3,7 @@ package shell
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -39,6 +40,24 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 		Opts:    opts,
 		Headers: make(map[string]string),
 	}
+}
+
+type trailerReader struct {
+	resp *http.Response
+}
+
+func (r *trailerReader) Read(b []byte) (int, error) {
+	n, err := r.resp.Body.Read(b)
+	if err != nil {
+		if e := r.resp.Trailer.Get("X-Stream-Error"); e != "" {
+			err = errors.New(e)
+		}
+	}
+	return n, err
+}
+
+func (r *trailerReader) Close() error {
+	return r.resp.Body.Close()
 }
 
 type Response struct {
@@ -109,7 +128,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 
 	nresp := new(Response)
 
-	nresp.Output = resp.Body
+	nresp.Output = &trailerReader{resp}
 	if resp.StatusCode >= http.StatusBadRequest {
 		e := &Error{
 			Command: r.Command,
