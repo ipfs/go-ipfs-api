@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +28,17 @@ func TestAdd(t *testing.T) {
 	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
 	is.Nil(err)
 	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+}
+
+func TestRedirect(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	err := s.
+		Request("/version").
+		Exec(context.Background(), nil)
+	is.NotNil(err)
+	is.True(strings.Contains(err.Error(), "unexpected redirect"))
 }
 
 func TestAddWithCat(t *testing.T) {
