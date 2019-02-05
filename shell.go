@@ -33,7 +33,7 @@ const (
 
 type Shell struct {
 	url     string
-	httpcli *gohttp.Client
+	httpcli gohttp.Client
 }
 
 func NewLocalShell() *Shell {
@@ -79,11 +79,13 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 			url = host
 		}
 	}
-
-	return &Shell{
-		url:     url,
-		httpcli: c,
+	var sh Shell
+	sh.url = url
+	// We don't support redirects.
+	sh.httpcli.CheckRedirect = func(_ *gohttp.Request, _ []*gohttp.Request) error {
+		return fmt.Errorf("unexpected redirect")
 	}
+	return &sh
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {
