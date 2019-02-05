@@ -81,6 +81,7 @@ func NewShellWithClient(url string, c *gohttp.Client) *Shell {
 	}
 	var sh Shell
 	sh.url = url
+	sh.httpcli = *c
 	// We don't support redirects.
 	sh.httpcli.CheckRedirect = func(_ *gohttp.Request, _ []*gohttp.Request) error {
 		return fmt.Errorf("unexpected redirect")
