@@ -68,8 +68,14 @@ type Response struct {
 func (r *Response) Close() error {
 	if r.Output != nil {
 		// always drain output (response body)
-		ioutil.ReadAll(r.Output)
-		return r.Output.Close()
+		_, err1 := io.Copy(ioutil.Discard, r.Output)
+		err2 := r.Output.Close()
+		if err1 != nil {
+			return err1
+		}
+		if err2 != nil {
+			return err2
+		}
 	}
 	return nil
 }
