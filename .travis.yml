@@ -28,6 +28,7 @@ install:
   - true
 
 script:
+  - go get -d -t github.com/cheekybits/is/... # remove with gx
   - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
 
 
