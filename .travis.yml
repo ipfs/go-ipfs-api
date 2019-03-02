@@ -1,4 +1,5 @@
-sudo: required
+os:
+  - linux
 
 language: go
 
@@ -6,30 +7,26 @@ go:
   - 1.11.x
 
 env:
-  - IPFS_PATH=/tmp/ipfs
+  global:
+    - GOTFLAGS="-race"
+  matrix:
+    - BUILD_DEPTYPE=gx
+    - BUILD_DEPTYPE=gomod
 
-matrix:
-  allow_failures:
-    - go: tip
 
-services:
-  - docker
-
-before_install:
-- docker pull ipfs/go-ipfs:master
-- mkdir /tmp/ipfs && chmod 0777 /tmp/ipfs
-- docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master --enable-pubsub-experiment
-
+# disable travis install
 install:
-  - make deps
-  - go get -t -v ./...
+  - true
 
 script:
   - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
 
-notifications:
-  email: false
 
 cache:
   directories:
     - $GOPATH/src/gx
+    - $GOPATH/pkg/mod
+    - $HOME/.cache/go-build
+
+notifications:
+  email: false
