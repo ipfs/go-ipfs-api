@@ -6,12 +6,21 @@ language: go
 go:
   - 1.11.x
 
+services:
+  - docker
+
 env:
   global:
     - GOTFLAGS="-race"
+    - IPFS_PATH=/tmp/ipfs
   matrix:
     - BUILD_DEPTYPE=gx
     - BUILD_DEPTYPE=gomod
+
+before_install:
+  - docker pull ipfs/go-ipfs:master
+  - mkdir /tmp/ipfs && chmod 0777 /tmp/ipfs
+  - docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master --enable-pubsub-experiment
 
 
 # disable travis install
