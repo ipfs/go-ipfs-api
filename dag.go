@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/ipfs/go-ipfs-api/options"
-	"github.com/ipfs/go-ipfs-files"
+	"github.com/RTradeLtd/go-ipfs-api/options"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {

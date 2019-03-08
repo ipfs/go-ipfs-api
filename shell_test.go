@@ -12,14 +12,221 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RTradeLtd/go-ipfs-api/options"
 	"github.com/cheekybits/is"
-	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
 	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
-	shellUrl     = "localhost:5001"
+	shellUrl     = "192.168.1.101:5001"
 )
+
+func TestNewDirectShell(t *testing.T) {
+	is := is.New(t)
+	s := NewDirectShell(shellUrl)
+	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
+	is.Nil(err)
+	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+	s.SetTimeout(1 * time.Second)
+
+	rand := randString(32)
+
+	mhash, err = s.Add(bytes.NewBufferString(rand))
+	is.Nil(err)
+
+	reader, err := s.Cat(mhash)
+	is.Nil(err)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(reader)
+	catRand := buf.String()
+
+	is.Equal(rand, catRand)
+	rand = randString(32)
+
+	mhash, err = s.Add(bytes.NewBufferString(rand), OnlyHash(true))
+	is.Nil(err)
+
+	_, err = s.Cat(mhash)
+	is.Err(err) // we expect an http timeout error because `cat` won't find the `rand` string
+	h, err := s.Add(bytes.NewBufferString(randString(32)), Pin(false))
+	is.Nil(err)
+
+	pins, err := s.Pins()
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.False(ok)
+	h, err = s.AddNoPin(bytes.NewBufferString(randString(32)))
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	_, ok = pins[h]
+	is.False(ok)
+	cid, err := s.AddDir("./testdata")
+	is.Nil(err)
+	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
+	rc, err := s.Cat(fmt.Sprintf("/ipfs/%s/readme", examplesHash))
+	is.Nil(err)
+
+	md5 := md5.New()
+	_, err = io.Copy(md5, rc)
+	is.Nil(err)
+	is.Equal(fmt.Sprintf("%x", md5.Sum(nil)), "3fdcaad186e79983a6920b4c7eeda949")
+	list, err := s.List(fmt.Sprintf("/ipfs/%s", examplesHash))
+	is.Nil(err)
+
+	is.Equal(len(list), 7)
+
+	// TODO: document difference in size between 'ipfs ls' and 'ipfs file ls -v'. additional object encoding in data block?
+	expected := map[string]LsLink{
+		"about":          {Type: TFile, Hash: "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V", Name: "about", Size: 1688},
+		"contact":        {Type: TFile, Hash: "QmYCvbfNbCwFR45HiNP45rwJgvatpiW38D961L5qAhUM5Y", Name: "contact", Size: 200},
+		"help":           {Type: TFile, Hash: "QmY5heUM5qgRubMDD1og9fhCPA6QdkMp3QCwd4s7gJsyE7", Name: "help", Size: 322},
+		"ping":           {Type: TFile, Hash: "QmejvEPop4D7YUadeGqYWmZxHhLc4JBUCzJJHWMzdcMe2y", Name: "ping", Size: 12},
+		"quick-start":    {Type: TFile, Hash: "QmXgqKTbzdh83pQtKFb19SpMCpDDcKR2ujqk3pKph9aCNF", Name: "quick-start", Size: 1692},
+		"readme":         {Type: TFile, Hash: "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB", Name: "readme", Size: 1102},
+		"security-notes": {Type: TFile, Hash: "QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm", Name: "security-notes", Size: 1173},
+	}
+	for _, l := range list {
+		el, ok := expected[l.Name]
+		is.True(ok)
+		is.NotNil(el)
+		is.Equal(*l, el)
+	}
+	unixList, err := s.FileList(fmt.Sprintf("/ipfs/%s", examplesHash))
+	is.Nil(err)
+
+	is.Equal(unixList.Type, "Directory")
+	is.Equal(unixList.Size, 0)
+	is.Equal(len(unixList.Links), 7)
+
+	// TODO: document difference in sice betwen 'ipfs ls' and 'ipfs file ls -v'. additional object encoding in data block?
+	expectedUnix := map[string]UnixLsLink{
+		"about":          {Type: "File", Hash: "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V", Name: "about", Size: 1677},
+		"contact":        {Type: "File", Hash: "QmYCvbfNbCwFR45HiNP45rwJgvatpiW38D961L5qAhUM5Y", Name: "contact", Size: 189},
+		"help":           {Type: "File", Hash: "QmY5heUM5qgRubMDD1og9fhCPA6QdkMp3QCwd4s7gJsyE7", Name: "help", Size: 311},
+		"ping":           {Type: "File", Hash: "QmejvEPop4D7YUadeGqYWmZxHhLc4JBUCzJJHWMzdcMe2y", Name: "ping", Size: 4},
+		"quick-start":    {Type: "File", Hash: "QmXgqKTbzdh83pQtKFb19SpMCpDDcKR2ujqk3pKph9aCNF", Name: "quick-start", Size: 1681},
+		"readme":         {Type: "File", Hash: "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB", Name: "readme", Size: 1091},
+		"security-notes": {Type: "File", Hash: "QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm", Name: "security-notes", Size: 1162},
+	}
+	for _, l := range unixList.Links {
+		el, ok := expectedUnix[l.Name]
+		is.True(ok)
+		is.NotNil(el)
+		is.Equal(*l, el)
+	}
+	// Add a thing, which pins it by default
+	h, err = s.Add(bytes.NewBufferString("go-ipfs-api pins test 9F3D1F30-D12A-4024-9477-8F0C8E4B3A63"))
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	_, ok = pins[h]
+	is.True(ok)
+
+	err = s.Unpin(h)
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	_, ok = pins[h]
+	is.False(ok)
+
+	err = s.Pin(h)
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	info, ok := pins[h]
+	is.True(ok)
+	is.Equal(info.Type, RecursivePin)
+	newRoot, err := s.Patch(examplesHash, "rm-link", "about")
+	is.Nil(err)
+	is.Equal(newRoot, "QmPmCJpciopaZnKcwymfQyRAEjXReR6UL2rdSfEscZfzcp")
+	newRoot, err = s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", true)
+	is.Nil(err)
+	is.Equal(newRoot, "QmVfe7gesXf4t9JzWePqqib8QSifC1ypRBGeJHitSnF7fA")
+	newRoot, err = s.PatchLink(examplesHash, "about", "QmUXTtySmd7LD4p6RG6rZW6RuUuPZXTtNMmRQ6DSQo3aMw", false)
+	is.Nil(err)
+	is.Equal(newRoot, "QmVfe7gesXf4t9JzWePqqib8QSifC1ypRBGeJHitSnF7fA")
+	newHash, err := s.NewObject("unixfs-dir")
+	is.Nil(err)
+	_, err = s.PatchLink(newHash, "a/b/c", newHash, false)
+	is.NotNil(err)
+	newHash, err = s.PatchLink(newHash, "a/b/c", newHash, true)
+	is.Nil(err)
+	is.Equal(newHash, "QmQ5D3xbMWFQRC9BKqbvnSnHri31GqvtWG1G6rE8xAZf1J")
+	childHash, err := s.ResolvePath(fmt.Sprintf("/ipfs/%s/about", examplesHash))
+	is.Nil(err)
+	is.Equal(childHash, "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V")
+	var (
+		topic = "test"
+
+		sub *PubSubSubscription
+	)
+
+	t.Log("subscribing...")
+	sub, err = s.PubSubSubscribe(topic)
+	is.Nil(err)
+	is.NotNil(sub)
+	t.Log("sub: done")
+
+	time.Sleep(10 * time.Millisecond)
+
+	t.Log("publishing...")
+	is.Nil(s.PubSubPublish(topic, "Hello World!"))
+	t.Log("pub: done")
+
+	t.Log("next()...")
+	r, err := sub.Next()
+	t.Log("next: done. ")
+
+	is.Nil(err)
+	is.NotNil(r)
+	is.Equal(r.Data(), "Hello World!")
+
+	sub2, err := s.PubSubSubscribe(topic)
+	is.Nil(err)
+	is.NotNil(sub2)
+
+	is.Nil(s.PubSubPublish(topic, "Hallo Welt!"))
+
+	r, err = sub2.Next()
+	is.Nil(err)
+	is.NotNil(r)
+	is.Equal(r.Data(), "Hallo Welt!")
+
+	r, err = sub.Next()
+	is.NotNil(r)
+	is.Nil(err)
+	is.Equal(r.Data(), "Hallo Welt!")
+
+	is.Nil(sub.Cancel())
+	obj := "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V"
+
+	stat, err := s.ObjectStat("QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V")
+	is.Nil(err)
+	is.Equal(stat.Hash, obj)
+	is.Equal(stat.LinksSize, 3)
+	is.Equal(stat.CumulativeSize, 1688)
+	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
+	is.Nil(err)
+	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
+	c, err = s.DagPutWithOpts(`{"x": "abc","y":"def"}`, options.Dag.Pin("true"))
+	is.Nil(err)
+	is.Equal(c, "zdpuAt47YjE9XTgSxUBkiYCbmnktKajQNheQBGASHj3FfYf8M")
+	_, err = s.StatsBW(context.Background())
+	is.Nil(err)
+	_, err = s.SwarmPeers(context.Background())
+	is.Nil(err)
+}
 
 func TestAdd(t *testing.T) {
 	is := is.New(t)
@@ -110,16 +317,6 @@ func TestAddDir(t *testing.T) {
 	cid, err := s.AddDir("./testdata")
 	is.Nil(err)
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
-}
-
-func TestLocalShell(t *testing.T) {
-	is := is.New(t)
-	s := NewLocalShell()
-	is.NotNil(s)
-
-	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
-	is.Nil(err)
-	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
 }
 
 func TestCat(t *testing.T) {
@@ -225,6 +422,36 @@ func TestPins(t *testing.T) {
 	is.Equal(info.Type, RecursivePin)
 }
 
+// Runs ipfs pin update
+func TestPinUpdate(t *testing.T) {
+	var (
+		oldPin          = "zb2rheJDzFsa7AsCnSxKimX8eF5wkjriJqeGBamjQF79vr14R"
+		newPin          = "QmbB6M914rwm9ZezVd2u8Y2k4g5TRoWWxP3PYKkDipCzpT"
+		expectedOldPath = "/ipfs/zb2rheJDzFsa7AsCnSxKimX8eF5wkjriJqeGBamjQF79vr14R"
+		expectedNewPath = "/ipfs/QmbB6M914rwm9ZezVd2u8Y2k4g5TRoWWxP3PYKkDipCzpT"
+	)
+	s := NewShell(shellUrl)
+	if err := s.Pin(oldPin); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Pin(newPin); err != nil {
+		t.Fatal(err)
+	}
+	out, err := s.PinUpdate(oldPin, newPin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out) == 0 {
+		t.Fatal("bad output")
+	}
+	if out["Pins"][0] != expectedOldPath {
+		t.Fatal("failed to calculate old pin path")
+	}
+	if out["Pins"][1] != expectedNewPath {
+		t.Fatal("failed to calculate new pin path")
+	}
+}
+
 func TestPatch_rmLink(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
@@ -289,7 +516,7 @@ func TestPubSub(t *testing.T) {
 
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data, "Hello World!")
+	is.Equal(r.Data(), "Hello World!")
 
 	sub2, err := s.PubSubSubscribe(topic)
 	is.Nil(err)
@@ -300,12 +527,12 @@ func TestPubSub(t *testing.T) {
 	r, err = sub2.Next()
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data, "Hallo Welt!")
+	is.Equal(r.Data(), "Hallo Welt!")
 
 	r, err = sub.Next()
 	is.NotNil(r)
 	is.Nil(err)
-	is.Equal(r.Data, "Hallo Welt!")
+	is.Equal(r.Data(), "Hallo Welt!")
 
 	is.Nil(sub.Cancel())
 }
@@ -387,7 +614,7 @@ func TestRefs(t *testing.T) {
 	cid, err := s.AddDir("./testdata")
 	is.Nil(err)
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
-	refs, err := s.Refs(cid, false)
+	refs, err := s.Refs(cid, false, false)
 	is.Nil(err)
 	expected := []string{
 		"QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V",
