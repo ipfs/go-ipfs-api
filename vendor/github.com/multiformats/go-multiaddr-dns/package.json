@@ -1,0 +1,24 @@
+{
+  "author": "lgierth",
+  "bugs": {
+    "url": "https://github.com/multiformats/go-multiaddr-dns/issues"
+  },
+  "gx": {
+    "dvcsimport": "github.com/multiformats/go-multiaddr-dns"
+  },
+  "gxDependencies": [
+    {
+      "author": "multiformats",
+      "hash": "QmNTCey11oxhb1AxDnQBRHtdhap6Ctud872NjAYPYYXPuc",
+      "name": "go-multiaddr",
+      "version": "1.4.0"
+    }
+  ],
+  "gxVersion": "0.10.0",
+  "language": "go",
+  "license": "MIT",
+  "name": "go-multiaddr-dns",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
+  "version": "0.3.0"
+}
+

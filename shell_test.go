@@ -18,7 +18,7 @@ import (
 
 const (
 	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
-	shellUrl     = "192.168.1.101:5001"
+	shellUrl     = "127.0.0.1:5001"
 )
 
 func TestNewDirectShell(t *testing.T) {
