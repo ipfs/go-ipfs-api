@@ -1,3 +1,5 @@
+github.com/RTradeLtd/go-ipfs-api v2.0.9+incompatible h1:LBG4bj/5X2YLXrKbADnCxfj1CDtN9hLsd22A68O9m7U=
+github.com/RTradeLtd/go-ipfs-api v2.0.9+incompatible/go.mod h1:gNXXZcJz7PkDXtUhjrlf4pSgDVV7yhVKQvLWUO/5k9o=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 h1:qkOC5Gd33k54tobS36cXdAzJbeHaduLtnLQQwNoIi78=
 github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32/go.mod h1:DrZx5ec/dmnfpw9KyYoQyYo7d0KEvTkk/5M/vbZjAr8=

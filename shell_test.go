@@ -190,7 +190,7 @@ func TestNewDirectShell(t *testing.T) {
 
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data(), "Hello World!")
+	is.Equal(r.Data, "Hello World!")
 
 	sub2, err := s.PubSubSubscribe(topic)
 	is.Nil(err)
@@ -201,12 +201,12 @@ func TestNewDirectShell(t *testing.T) {
 	r, err = sub2.Next()
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data(), "Hallo Welt!")
+	is.Equal(r.Data, "Hallo Welt!")
 
 	r, err = sub.Next()
 	is.NotNil(r)
 	is.Nil(err)
-	is.Equal(r.Data(), "Hallo Welt!")
+	is.Equal(r.Data, "Hallo Welt!")
 
 	is.Nil(sub.Cancel())
 	obj := "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V"
@@ -516,7 +516,7 @@ func TestPubSub(t *testing.T) {
 
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data(), "Hello World!")
+	is.Equal(r.Data, "Hello World!")
 
 	sub2, err := s.PubSubSubscribe(topic)
 	is.Nil(err)
@@ -527,12 +527,12 @@ func TestPubSub(t *testing.T) {
 	r, err = sub2.Next()
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data(), "Hallo Welt!")
+	is.Equal(r.Data, "Hallo Welt!")
 
 	r, err = sub.Next()
 	is.NotNil(r)
 	is.Nil(err)
-	is.Equal(r.Data(), "Hallo Welt!")
+	is.Equal(r.Data, "Hallo Welt!")
 
 	is.Nil(sub.Cancel())
 }

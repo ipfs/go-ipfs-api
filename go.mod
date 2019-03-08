@@ -1,6 +1,7 @@
 module github.com/ipfs/go-ipfs-api
 
 require (
+	github.com/RTradeLtd/go-ipfs-api v2.0.9+incompatible
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927
 	github.com/ipfs/go-ipfs-files v0.0.1
 	github.com/ipfs/go-ipfs-util v0.0.1
