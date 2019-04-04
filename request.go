@@ -16,6 +16,7 @@ import (
 )
 
 type Request struct {
+	Ctx     context.Context
 	ApiBase string
 	Command string
 	Args    []string
@@ -34,6 +35,7 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 		"stream-channels": "true",
 	}
 	return &Request{
+		Ctx:     ctx,
 		ApiBase: url + "/api/v0",
 		Command: command,
 		Args:    args,
@@ -112,6 +114,8 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	req = req.WithContext(r.Ctx)
 
 	// Add any headers that were supplied via the RequestBuilder.
 	for k, v := range r.Headers {
