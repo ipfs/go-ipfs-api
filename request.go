@@ -110,12 +110,12 @@ func (e *Error) Error() string {
 
 func (r *Request) Send(c *http.Client) (*Response, error) {
 	url := r.getURL()
-	req0, err := http.NewRequest("POST", url, r.Body)
+	req, err := http.NewRequest("POST", url, r.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	req := req0.WithContext(r.Ctx)
+	req = req.WithContext(r.Ctx)
 
 	// Add any headers that were supplied via the RequestBuilder.
 	for k, v := range r.Headers {
