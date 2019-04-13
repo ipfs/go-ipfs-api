@@ -5,6 +5,7 @@ type DagPutSettings struct {
 	InputEnc string
 	Kind     string
 	Pin      string
+	Hash     string
 }
 
 // DagPutOption is a single DagPut option.
@@ -16,6 +17,7 @@ func DagPutOptions(opts ...DagPutOption) (*DagPutSettings, error) {
 		InputEnc: "json",
 		Kind:     "cbor",
 		Pin:      "false",
+		Hash:     "sha2-256",
 	}
 
 	for _, opt := range opts {
@@ -54,6 +56,14 @@ func (dagOpts) InputEnc(enc string) DagPutOption {
 func (dagOpts) Kind(kind string) DagPutOption {
 	return func(opts *DagPutSettings) error {
 		opts.Kind = kind
+		return nil
+	}
+}
+
+// Hash is an option for Dag.Put which specifies the hash function to use
+func (dagOpts) Hash(hash string) DagPutOption {
+	return func(opts *DagPutSettings) error {
+		opts.Hash = hash
 		return nil
 	}
 }
