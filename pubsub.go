@@ -3,7 +3,7 @@ package shell
 import (
 	"encoding/json"
 
-	"github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-peer"
 )
 
 // Message is a pubsub message.

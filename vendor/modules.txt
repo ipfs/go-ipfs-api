@@ -1,0 +1,51 @@
+# github.com/RTradeLtd/go-ipfs-api v2.0.9+incompatible
+github.com/RTradeLtd/go-ipfs-api/options
+# github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
+github.com/btcsuite/btcd/btcec
+# github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927
+github.com/cheekybits/is
+# github.com/gogo/protobuf v1.2.1
+github.com/gogo/protobuf/proto
+# github.com/gxed/hashland/keccakpg v0.0.1
+github.com/gxed/hashland/keccakpg
+# github.com/gxed/hashland/murmur3 v0.0.1
+github.com/gxed/hashland/murmur3
+# github.com/ipfs/go-ipfs-files v0.0.1
+github.com/ipfs/go-ipfs-files
+# github.com/libp2p/go-flow-metrics v0.0.1
+github.com/libp2p/go-flow-metrics
+# github.com/libp2p/go-libp2p-crypto v0.0.1
+github.com/libp2p/go-libp2p-crypto
+github.com/libp2p/go-libp2p-crypto/pb
+# github.com/libp2p/go-libp2p-metrics v0.0.1
+github.com/libp2p/go-libp2p-metrics
+# github.com/libp2p/go-libp2p-peer v0.0.1
+github.com/libp2p/go-libp2p-peer
+# github.com/libp2p/go-libp2p-protocol v0.0.1
+github.com/libp2p/go-libp2p-protocol
+# github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
+github.com/minio/blake2b-simd
+# github.com/minio/sha256-simd v0.0.0-20190131020904-2d45a736cd16
+github.com/minio/sha256-simd
+# github.com/mitchellh/go-homedir v1.1.0
+github.com/mitchellh/go-homedir
+# github.com/mr-tron/base58 v1.1.0
+github.com/mr-tron/base58/base58
+# github.com/multiformats/go-multiaddr v0.0.1
+github.com/multiformats/go-multiaddr
+# github.com/multiformats/go-multiaddr-dns v0.0.1
+github.com/multiformats/go-multiaddr-dns
+# github.com/multiformats/go-multiaddr-net v0.0.1
+github.com/multiformats/go-multiaddr-net
+# github.com/multiformats/go-multihash v0.0.1
+github.com/multiformats/go-multihash
+# github.com/whyrusleeping/tar-utils v0.0.0-20180509141711-8c6c8ba81d5c
+github.com/whyrusleeping/tar-utils
+# golang.org/x/crypto v0.0.0-20190225124518-7f87c0fbb88b
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/blake2s
+golang.org/x/crypto/sha3
+golang.org/x/crypto/ed25519/internal/edwards25519
+# golang.org/x/sys v0.0.0-20190302025703-b6889370fb10
+golang.org/x/sys/windows
+golang.org/x/sys/cpu

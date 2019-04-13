@@ -12,13 +12,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RTradeLtd/go-ipfs-api/options"
 	"github.com/cheekybits/is"
-	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
 	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
-	shellUrl     = "localhost:5001"
+	shellUrl     = "192.168.1.101:5001"
 )
 
 func TestAdd(t *testing.T) {
@@ -110,16 +110,6 @@ func TestAddDir(t *testing.T) {
 	cid, err := s.AddDir("./testdata")
 	is.Nil(err)
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
-}
-
-func TestLocalShell(t *testing.T) {
-	is := is.New(t)
-	s := NewLocalShell()
-	is.NotNil(s)
-
-	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
-	is.Nil(err)
-	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
 }
 
 func TestCat(t *testing.T) {
@@ -387,7 +377,7 @@ func TestRefs(t *testing.T) {
 	cid, err := s.AddDir("./testdata")
 	is.Nil(err)
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
-	refs, err := s.Refs(cid, false)
+	refs, err := s.Refs(cid, false, false)
 	is.Nil(err)
 	expected := []string{
 		"QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V",
