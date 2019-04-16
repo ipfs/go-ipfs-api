@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/ipfs/go-ipfs-api/options"
-	"github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 func (s *Shell) DagGet(ref string, out interface{}) error {
@@ -52,6 +52,7 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 		Option("input-enc", cfg.InputEnc).
 		Option("format", cfg.Kind).
 		Option("pin", cfg.Pin).
+		Option("hash", cfg.Hash).
 		Body(fileReader).
 		Exec(context.Background(), &out)
 }
