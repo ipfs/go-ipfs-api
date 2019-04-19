@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"filepath"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/ipfs/go-ipfs-files"
 )
