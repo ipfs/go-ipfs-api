@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/ipfs/go-ipfs-files"
 )
@@ -90,7 +90,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(path.Base(dir), sf)})
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(filepath.Base(dir), sf)})
 	reader := files.NewMultiFileReader(slf, true)
 
 	resp, err := s.Request("add").
