@@ -30,7 +30,7 @@ func (l Logger) Close() error {
 // GetLogs is used to retrieve a parsable logger object
 func (s *Shell) GetLogs() (Logger, error) {
 	var url string
-	if !strings.HasPrefix(s.url, "http://") {
+	if !strings.HasPrefix(s.url, "http://") || !strings.HasPrefix(s.url, "https://") {
 		url = fmt.Sprintf("http://%s/api/v0/log/tail", s.url)
 	} else {
 		url = s.url
