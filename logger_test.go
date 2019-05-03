@@ -1,6 +1,8 @@
 package shell
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_Logger(t *testing.T) {
 	sh := NewLocalShell()
@@ -13,8 +15,9 @@ func Test_Logger(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	_, err = logger.Next()
-	if err != nil {
+	if l, err := logger.Next(); err != nil {
 		t.Fatal(err)
+	} else if l == nil {
+		t.Fatal("no logs found")
 	}
 }

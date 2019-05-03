@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // Logger is used to handle incoming logs from the ipfs node
@@ -28,8 +29,13 @@ func (l Logger) Close() error {
 
 // GetLogs is used to retrieve a parsable logger object
 func (s *Shell) GetLogs() (Logger, error) {
-	logURL := fmt.Sprintf("http://%s/api/v0/log/tail", s.url)
-	req, err := http.NewRequest("GET", logURL, nil)
+	var url string
+	if !strings.HasPrefix(s.url, "http://") {
+		url = fmt.Sprintf("http://%s/api/v0/log/tail", s.url)
+	} else {
+		url = s.url
+	}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return Logger{}, err
 	}
