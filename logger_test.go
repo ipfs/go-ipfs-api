@@ -5,7 +5,7 @@ import (
 )
 
 func Test_Logger(t *testing.T) {
-	sh := NewLocalShell()
+	sh := NewShell(shellUrl)
 	logger, err := sh.GetLogs()
 	if err != nil {
 		t.Fatal(err)
