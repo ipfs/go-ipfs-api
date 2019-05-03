@@ -437,7 +437,11 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newPubSubSubscription(resp), nil
+	if resp.Error != nil {
+		resp.Close()
+		return nil, resp.Error
+	}
+	return newPubSubSubscription(resp.Output), nil
 }
 
 func (s *Shell) PubSubPublish(topic, data string) (err error) {
