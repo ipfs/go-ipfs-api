@@ -25,13 +25,12 @@ func (l Logger) Close() error {
 
 // GetLogs is used to retrieve a parsable logger object
 func (s *Shell) GetLogs(ctx context.Context) (Logger, error) {
-
 	resp, err := s.Request("log/tail").Send(ctx)
 	if err != nil {
-		return Logger{}, nil
+		return Logger{}, err
 	}
 	if resp.Error != nil {
-		resp.Close()
+		resp.Output.Close()
 		return Logger{}, resp.Error
 	}
 	return newLogger(resp.Output), nil

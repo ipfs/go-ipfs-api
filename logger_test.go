@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_Logger(t *testing.T) {
+func TestLogger(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	sh := NewShell(shellUrl)
