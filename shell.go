@@ -17,6 +17,8 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/interface-go-ipfs-core"
 	"github.com/mitchellh/go-homedir"
+	ma "github.com/multiformats/go-multiaddr"
+	manet "github.com/multiformats/go-multiaddr-net"
 	"github.com/whyrusleeping/tar-utils"
 
 	"github.com/ipfs/go-ipfs-http-client"
@@ -82,6 +84,13 @@ func NewShell(url string) *Shell {
 }
 
 func NewShellWithClient(url string, c *gohttp.Client) *Shell {
+	if a, err := ma.NewMultiaddr(url); err == nil {
+		_, host, err := manet.DialArgs(a)
+		if err == nil {
+			url = host
+		}
+	}
+
 	api, err := httpapi.NewURLApiWithClient(url, c)
 	if err != nil {
 		return &Shell{}

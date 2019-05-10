@@ -88,6 +88,8 @@ github.com/ipfs/go-ipfs-http-client v0.0.1 h1:2AGO925+f7f83S5QQpKtBwDQit7hH8NDrb
 github.com/ipfs/go-ipfs-http-client v0.0.1/go.mod h1:KUugPfd9tyvRg9U4flMs4//ERbR4b5+kZA6kWmTkThs=
 github.com/ipfs/go-ipfs-http-client v0.0.2 h1:YUvbAAppsBRWsi1wxIIZE2ahoPXkqM7M7TfCbTpHOiY=
 github.com/ipfs/go-ipfs-http-client v0.0.2/go.mod h1:d7wyhk8Ik1q6QUeSbn8+a7DTC3J24QYMIi+ghaxHV5k=
+github.com/ipfs/go-ipfs-http-client v0.0.3-0.20190510133820-0534b7ca8319 h1:f5rDiXUDeoSkuDYPCU85TAuwSp40xEI+WHxzVadpLIs=
+github.com/ipfs/go-ipfs-http-client v0.0.3-0.20190510133820-0534b7ca8319/go.mod h1:d7wyhk8Ik1q6QUeSbn8+a7DTC3J24QYMIi+ghaxHV5k=
 github.com/ipfs/go-ipfs-posinfo v0.0.1/go.mod h1:SwyeVP+jCwiDu0C313l/8jg6ZxM0qqtlt2a0vILTc1A=
 github.com/ipfs/go-ipfs-pq v0.0.1/go.mod h1:LWIqQpqfRG3fNc5XsnIhz/wQ2XXGyugQwls7BgUmUfY=
 github.com/ipfs/go-ipfs-routing v0.0.1/go.mod h1:k76lf20iKFxQTjcJokbPM9iBXVXVZhcOwc360N4nuKs=

@@ -13,5 +13,3 @@ require (
 	github.com/multiformats/go-multiaddr-net v0.0.1
 	github.com/whyrusleeping/tar-utils v0.0.0-20180509141711-8c6c8ba81d5c
 )
-
-
