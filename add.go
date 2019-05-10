@@ -9,37 +9,39 @@ import (
 	"path/filepath"
 
 	"github.com/ipfs/go-ipfs-files"
+
+	httpapi "github.com/ipfs/go-ipfs-http-client"
 )
 
 type object struct {
 	Hash string
 }
 
-type AddOpts = func(*RequestBuilder) error
+type AddOpts = func(httpapi.RequestBuilder) error
 
 func OnlyHash(enabled bool) AddOpts {
-	return func(rb *RequestBuilder) error {
+	return func(rb httpapi.RequestBuilder) error {
 		rb.Option("only-hash", enabled)
 		return nil
 	}
 }
 
 func Pin(enabled bool) AddOpts {
-	return func(rb *RequestBuilder) error {
+	return func(rb httpapi.RequestBuilder) error {
 		rb.Option("pin", enabled)
 		return nil
 	}
 }
 
 func Progress(enabled bool) AddOpts {
-	return func(rb *RequestBuilder) error {
+	return func(rb httpapi.RequestBuilder) error {
 		rb.Option("progress", enabled)
 		return nil
 	}
 }
 
 func RawLeaves(enabled bool) AddOpts {
-	return func(rb *RequestBuilder) error {
+	return func(rb httpapi.RequestBuilder) error {
 		rb.Option("raw-leaves", enabled)
 		return nil
 	}

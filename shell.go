@@ -13,13 +13,13 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
-	homedir "github.com/mitchellh/go-homedir"
-	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
-	tar "github.com/whyrusleeping/tar-utils"
+	"github.com/ipfs/interface-go-ipfs-core"
+	"github.com/mitchellh/go-homedir"
+	"github.com/whyrusleeping/tar-utils"
+
+	"github.com/ipfs/go-ipfs-http-client"
 
 	p2pmetrics "github.com/libp2p/go-libp2p-metrics"
 )
@@ -32,8 +32,17 @@ const (
 )
 
 type Shell struct {
-	url     string
-	httpcli gohttp.Client
+	api iface.CoreAPI
+
+	// not set with NewApiShell
+	client *gohttp.Client
+	url    string
+}
+
+func NewApiShell(api iface.CoreAPI) *Shell {
+	return &Shell{
+		api: api,
+	}
 }
 
 func NewLocalShell() *Shell {
@@ -73,31 +82,18 @@ func NewShell(url string) *Shell {
 }
 
 func NewShellWithClient(url string, c *gohttp.Client) *Shell {
-	if a, err := ma.NewMultiaddr(url); err == nil {
-		_, host, err := manet.DialArgs(a)
-		if err == nil {
-			url = host
-		}
+	api, err := httpapi.NewURLApiWithClient(url, c)
+	if err != nil {
+		return &Shell{}
 	}
-	var sh Shell
-	sh.url = url
-	sh.httpcli = *c
-	// We don't support redirects.
-	sh.httpcli.CheckRedirect = func(_ *gohttp.Request, _ []*gohttp.Request) error {
-		return fmt.Errorf("unexpected redirect")
-	}
-	return &sh
-}
 
-func (s *Shell) SetTimeout(d time.Duration) {
-	s.httpcli.Timeout = d
-}
+	var client = *c // make a copy
 
-func (s *Shell) Request(command string, args ...string) *RequestBuilder {
-	return &RequestBuilder{
-		command: command,
-		args:    args,
-		shell:   s,
+	return &Shell{
+		api: api,
+
+		client: &client,
+		url:    url,
 	}
 }
 
