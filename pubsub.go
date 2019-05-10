@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/libp2p/go-libp2p-peer"
+
+	httpapi "github.com/ipfs/go-ipfs-http-client"
 )
 
 // Message is a pubsub message.
@@ -16,10 +18,10 @@ type Message struct {
 
 // PubSubSubscription allow you to receive pubsub records that where published on the network.
 type PubSubSubscription struct {
-	resp *Response
+	resp *httpapi.Response
 }
 
-func newPubSubSubscription(resp *Response) *PubSubSubscription {
+func newPubSubSubscription(resp *httpapi.Response) *PubSubSubscription {
 	sub := &PubSubSubscription{
 		resp: resp,
 	}

@@ -14,7 +14,6 @@ env:
     - GOTFLAGS="-race"
     - IPFS_PATH=/tmp/ipfs
   matrix:
-    - BUILD_DEPTYPE=gx
     - BUILD_DEPTYPE=gomod
 
 before_install:
