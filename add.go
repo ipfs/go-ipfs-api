@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/go-ipfs-files"
 )
 
 type object struct {
@@ -41,6 +41,14 @@ func Progress(enabled bool) AddOpts {
 func RawLeaves(enabled bool) AddOpts {
 	return func(rb *RequestBuilder) error {
 		rb.Option("raw-leaves", enabled)
+		return nil
+	}
+}
+
+// Hash allows for selecting the multihash type
+func Hash(hash string) AddOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("hash", hash)
 		return nil
 	}
 }

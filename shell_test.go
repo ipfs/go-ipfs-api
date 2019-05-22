@@ -28,6 +28,9 @@ func TestAdd(t *testing.T) {
 	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
 	is.Nil(err)
 	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+	mhash, err = s.Add(bytes.NewBufferString("Hello IPFS Shell tests"), Hash("sha3-256"))
+	is.Nil(err)
+	is.Equal(mhash, "zb2wwqxjxosf8GKEZCwAWSFZ879XFNca3De5yAoh5b2axAffc")
 }
 
 func TestRedirect(t *testing.T) {
