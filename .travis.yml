@@ -14,7 +14,7 @@ env:
     - GO111MODULE=on
     - GOTFLAGS="-race"
     - IPFS_PATH=/tmp/ipfs
-    # - BUILD_DEBTYPE=gomod commented out for now
+    - BUILD_DEBTYPE=gomod
 
 before_install:
   - docker pull ipfs/go-ipfs:master
@@ -28,7 +28,7 @@ install:
   - true
 
 script:
-  - go get -d -t github.com/cheekybits/is/... # remove with gx
+  - go get -d github.com/cheekybits/is/... # remove with gx
   - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
 
 
