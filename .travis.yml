@@ -20,12 +20,12 @@ before_install:
   - docker pull ipfs/go-ipfs:master
   - mkdir /tmp/ipfs && chmod 0777 /tmp/ipfs
   - docker run -d -v /tmp/ipfs:/data/ipfs -p 8080:8080 -p 4001:4001 -p 5001:5001 ipfs/go-ipfs:master --enable-pubsub-experiment
+
+install:
   - go mod download
 
-
-# disable travis install
-install:
-  - true
+before_script:
+- go vet ./...
 
 script:
   - go get -d github.com/cheekybits/is/... # remove with gx
