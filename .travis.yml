@@ -14,6 +14,7 @@ env:
     - GO111MODULE=on
     - GOTFLAGS="-race"
     - IPFS_PATH=/tmp/ipfs
+  matrix:
     - BUILD_DEBTYPE=gomod
 
 before_install:
@@ -29,11 +30,7 @@ before_script:
 
 script:
   - go get -d github.com/cheekybits/is/... # remove with gx
-  - go test -race -cover ./...
-  #  - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://raw.githubusercontent.com/ipfs/ci-helpers/master/travis-ci/run-standard-tests.sh)
 
 
 cache:
