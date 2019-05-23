@@ -15,7 +15,7 @@ env:
     - GOTFLAGS="-race"
     - IPFS_PATH=/tmp/ipfs
   matrix:
-    - BUILD_DEBTYPE=gomod
+    - BUILD_DEPTYPE=gomod
 
 before_install:
   - docker pull ipfs/go-ipfs:master
