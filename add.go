@@ -53,6 +53,14 @@ func Hash(hash string) AddOpts {
 	}
 }
 
+// CidVersion allows for selecting the CID version that ipfs should use.
+func CidVersion(version int) AddOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("cid-version", version)
+		return nil
+	}
+}
+
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 	fr := files.NewReaderFile(r)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
