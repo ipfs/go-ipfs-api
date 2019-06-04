@@ -2,6 +2,7 @@ package shell
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/libp2p/go-libp2p-peer"
 )
@@ -16,25 +17,19 @@ type Message struct {
 
 // PubSubSubscription allow you to receive pubsub records that where published on the network.
 type PubSubSubscription struct {
-	resp *Response
+	resp io.Closer
+	dec  *json.Decoder
 }
 
-func newPubSubSubscription(resp *Response) *PubSubSubscription {
-	sub := &PubSubSubscription{
+func newPubSubSubscription(resp io.ReadCloser) *PubSubSubscription {
+	return &PubSubSubscription{
 		resp: resp,
+		dec:  json.NewDecoder(resp),
 	}
-
-	return sub
 }
 
 // Next waits for the next record and returns that.
 func (s *PubSubSubscription) Next() (*Message, error) {
-	if s.resp.Error != nil {
-		return nil, s.resp.Error
-	}
-
-	d := json.NewDecoder(s.resp.Output)
-
 	var r struct {
 		From     []byte   `json:"from,omitempty"`
 		Data     []byte   `json:"data,omitempty"`
@@ -42,7 +37,7 @@ func (s *PubSubSubscription) Next() (*Message, error) {
 		TopicIDs []string `json:"topicIDs,omitempty"`
 	}
 
-	err := d.Decode(&r)
+	err := s.dec.Decode(&r)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +56,5 @@ func (s *PubSubSubscription) Next() (*Message, error) {
 
 // Cancel cancels the given subscription.
 func (s *PubSubSubscription) Cancel() error {
-	if s.resp.Output == nil {
-		return nil
-	}
-
-	return s.resp.Output.Close()
+	return s.resp.Close()
 }
