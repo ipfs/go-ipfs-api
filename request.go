@@ -142,6 +142,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 	if resp.StatusCode >= http.StatusBadRequest {
 		e := &Error{
 			Command: r.Command,
+			Code:    resp.StatusCode,
 		}
 		switch {
 		case resp.StatusCode == http.StatusNotFound:
