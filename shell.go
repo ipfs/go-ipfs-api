@@ -196,13 +196,52 @@ type PinInfo struct {
 }
 
 // Pins returns a map of the pin hashes to their info (currently just the
-// pin type, one of DirectPin, RecursivePin, or IndirectPin. A map is returned
+// pin type, one of DirectPin, RecursivePin, or IndirectPin). A map is returned
 // instead of a slice because it is easier to do existence lookup by map key
 // than unordered array searching. The map is likely to be more useful to a
 // client than a flat list.
 func (s *Shell) Pins() (map[string]PinInfo, error) {
 	var raw struct{ Keys map[string]PinInfo }
 	return raw.Keys, s.Request("pin/ls").Exec(context.Background(), &raw)
+}
+
+// PinStreamInfo is the output type for PinsStream
+type PinStreamInfo struct {
+	Cid  string
+	Type string
+}
+
+// PinsStream is a streamed version of Pins. It returns a channel of the pins
+// with their type, one of DirectPin, RecursivePin, or IndirectPin.
+func (s *Shell) PinsStream() (<-chan PinStreamInfo, error) {
+	resp, err := s.Request("pin/ls").
+		Option("stream", true).
+		Send(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Error != nil {
+		resp.Close()
+		return nil, resp.Error
+	}
+
+	out := make(chan PinStreamInfo)
+	go func() {
+		defer resp.Close()
+		var pin PinStreamInfo
+		defer close(out)
+		dec := json.NewDecoder(resp.Output)
+		for {
+			err := dec.Decode(&pin)
+			if err != nil {
+				return
+			}
+			out <- pin
+		}
+	}()
+
+	return out, nil
 }
 
 type PeerInfo struct {
