@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TRON-US/go-btfs-api/options"
 	"github.com/cheekybits/is"
-	"github.com/ipfs/go-ipfs-api/options"
 )
 
 const (
