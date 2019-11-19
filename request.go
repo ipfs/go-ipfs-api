@@ -15,6 +15,10 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 )
 
+const (
+	API_VERSION = "v1"
+)
+
 type Request struct {
 	ApiBase string
 	Command string
@@ -34,7 +38,7 @@ func NewRequest(ctx context.Context, url, command string, args ...string) *Reque
 		"stream-channels": "true",
 	}
 	return &Request{
-		ApiBase: url + "/api/v0",
+		ApiBase: url + "/api/" + API_VERSION,
 		Command: command,
 		Args:    args,
 		Opts:    opts,
