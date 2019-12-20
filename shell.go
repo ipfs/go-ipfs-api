@@ -25,10 +25,10 @@ import (
 )
 
 const (
-	DefaultPathName = ".ipfs"
+	DefaultPathName = ".btfs"
 	DefaultPathRoot = "~/" + DefaultPathName
 	DefaultApiFile  = "api"
-	EnvDir          = "IPFS_PATH"
+	EnvDir          = "BTFS_PATH"
 )
 
 type Shell struct {
