@@ -17,6 +17,20 @@ type object struct {
 
 type AddOpts = func(*RequestBuilder) error
 
+func Meta(meta string) AddOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("meta", meta)
+		return nil
+	}
+}
+
+func Chunker(chunker string) AddOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("chunker", chunker)
+		return nil
+	}
+}
+
 func OnlyHash(enabled bool) AddOpts {
 	return func(rb *RequestBuilder) error {
 		rb.Option("only-hash", enabled)
