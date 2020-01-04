@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
+	"net/http"
 	gohttp "net/http"
 	"os"
 	"path"
@@ -62,14 +64,28 @@ func NewLocalShell() *Shell {
 }
 
 func NewShell(url string) *Shell {
-	c := &gohttp.Client{
-		Transport: &gohttp.Transport{
-			Proxy:             gohttp.ProxyFromEnvironment,
-			DisableKeepAlives: true,
-		},
+	var client *http.Client
+
+	tpt := &http.Transport{
+		Proxy:             http.ProxyFromEnvironment,
+		DisableKeepAlives: true,
 	}
 
-	return NewShellWithClient(url, c)
+	maddr, err := ma.NewMultiaddr(url)
+	if err != nil {
+		client = &http.Client{Transport: tpt}
+		return NewShellWithClient(url, client)
+	}
+
+	if value, err := maddr.ValueForProtocol(ma.P_UNIX); err == nil {
+		url = "unix"
+		tpt.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("unix", value)
+		}
+	}
+
+	client = &http.Client{Transport: tpt}
+	return NewShellWithClient(url, client)
 }
 
 func NewShellWithClient(url string, c *gohttp.Client) *Shell {
