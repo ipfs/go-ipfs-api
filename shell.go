@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"net/http"
 	gohttp "net/http"
 	"os"
 	"path"
@@ -64,40 +63,35 @@ func NewLocalShell() *Shell {
 }
 
 func NewShell(url string) *Shell {
-	var client *http.Client
-
-	tpt := &http.Transport{
-		Proxy:             http.ProxyFromEnvironment,
-		DisableKeepAlives: true,
+	c := &gohttp.Client{
+		Transport: &gohttp.Transport{
+			Proxy:             gohttp.ProxyFromEnvironment,
+			DisableKeepAlives: true,
+		},
 	}
 
-	maddr, err := ma.NewMultiaddr(url)
-	if err != nil {
-		client = &http.Client{Transport: tpt}
-		return NewShellWithClient(url, client)
-	}
-
-	if value, err := maddr.ValueForProtocol(ma.P_UNIX); err == nil {
-		url = "unix"
-		tpt.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
-			return net.Dial("unix", value)
-		}
-	}
-
-	client = &http.Client{Transport: tpt}
-	return NewShellWithClient(url, client)
+	return NewShellWithClient(url, c)
 }
 
-func NewShellWithClient(url string, c *gohttp.Client) *Shell {
-	if a, err := ma.NewMultiaddr(url); err == nil {
-		_, host, err := manet.DialArgs(a)
-		if err == nil {
-			url = host
+func NewShellWithClient(url string, client *gohttp.Client) *Shell {
+	if maddr, err := ma.NewMultiaddr(url); err == nil {
+		if network, host, err := manet.DialArgs(maddr); err == nil {
+			if network == "unix" {
+				url = network
+				if tpt, ok := client.Transport.(*gohttp.Transport); ok && tpt != nil && tpt.DialContext == nil {
+					tpt.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
+						return net.Dial("unix", host)
+					}
+				}
+			} else {
+				url = host
+			}
 		}
 	}
+
 	var sh Shell
 	sh.url = url
-	sh.httpcli = *c
+	sh.httpcli = *client
 	// We don't support redirects.
 	sh.httpcli.CheckRedirect = func(_ *gohttp.Request, _ []*gohttp.Request) error {
 		return fmt.Errorf("unexpected redirect")
