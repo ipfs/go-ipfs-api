@@ -74,28 +74,50 @@ func NewShell(url string) *Shell {
 }
 
 func NewShellWithClient(url string, client *gohttp.Client) *Shell {
-	if maddr, err := ma.NewMultiaddr(url); err == nil {
-		if network, host, err := manet.DialArgs(maddr); err == nil {
-			if network == "unix" {
-				url = network
-				if tpt, ok := client.Transport.(*gohttp.Transport); ok && tpt != nil && tpt.DialContext == nil {
-					tpt.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
-						return net.Dial("unix", host)
-					}
-				}
-			} else {
-				url = host
-			}
-		}
-	}
-
 	var sh Shell
+
 	sh.url = url
 	sh.httpcli = *client
 	// We don't support redirects.
 	sh.httpcli.CheckRedirect = func(_ *gohttp.Request, _ []*gohttp.Request) error {
 		return fmt.Errorf("unexpected redirect")
 	}
+
+	maddr, err := ma.NewMultiaddr(url)
+	if err != nil {
+		return &sh
+	}
+
+	network, host, err := manet.DialArgs(maddr)
+	if err != nil {
+		return &sh
+	}
+
+	if network == "unix" {
+		sh.url = network
+
+		var tptCopy *gohttp.Transport
+		if tpt, ok := sh.httpcli.Transport.(*gohttp.Transport); ok && tpt.DialContext == nil {
+			tptCopy = tpt.Clone()
+		} else if sh.httpcli.Transport == nil {
+			tptCopy = &gohttp.Transport{
+				Proxy:             gohttp.ProxyFromEnvironment,
+				DisableKeepAlives: true,
+			}
+		} else {
+			// custom Transport or custom Dialer, we are done here
+			return &sh
+		}
+
+		tptCopy.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("unix", host)
+		}
+
+		sh.httpcli.Transport = tptCopy
+	} else {
+		sh.url = host
+	}
+
 	return &sh
 }
 
