@@ -1,12 +1,18 @@
 package shell
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/md5"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -359,6 +365,45 @@ func TestSwarmPeers(t *testing.T) {
 	s := NewShell(shellUrl)
 	_, err := s.SwarmPeers(context.Background())
 	is.Nil(err)
+}
+
+// TestNewShellWithUnixSocket only check that http client is well configured to
+// perform http request on unix socket address
+func TestNewShellWithUnixSocket(t *testing.T) {
+	is := is.New(t)
+
+	// setup uds temporary dir
+	path, err := ioutil.TempDir("", "uds-test")
+	is.Nil(err)
+
+	defer os.RemoveAll(path)
+
+	// listen on sock path
+	sockpath := filepath.Join(path, "sock")
+	lsock, err := net.Listen("unix", sockpath)
+	is.Nil(err)
+
+	defer lsock.Close()
+
+	// handle simple `hello` route
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v0/hello", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "Hello World\n")
+	})
+
+	go http.Serve(lsock, mux)
+
+	// create shell with "/unix/<sockpath>" multiaddr
+	shell := NewShell("/unix/" + sockpath)
+	res, err := shell.Request("hello").Send(context.Background())
+	is.Nil(err)
+
+	defer res.Output.Close()
+
+	// read hello world from body
+	str, err := bufio.NewReader(res.Output).ReadString('\n')
+	is.Nil(err)
+	is.Equal(str, "Hello World\n")
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
