@@ -1,3 +1,5 @@
+go 1.13
+
 module github.com/ipfs/go-ipfs-api
 
 require (
