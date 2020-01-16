@@ -8,20 +8,66 @@ import (
 	"io"
 	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/TRON-US/go-btfs-api/options"
 	"github.com/cheekybits/is"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/tron-us/go-btfs-common/crypto"
 )
 
 const (
 	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
 	shellUrl     = "localhost:5001"
+	privateKey = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
 )
 
+func peerSessionSignature(privateKey string, timestamp string, peerId int64) string {
+	privKey, _ := crypto.ToPrivKey(privateKey)
+	timeNonce := fmt.Sprint("",strconv.FormatInt(peerId, 10), timestamp)
+	timeNonceBytes := []byte(timeNonce)
+	sign, err := privKey.Sign(timeNonceBytes)
+	if err != nil{
+		log.Error(err)
+	}
+	return string(sign)
+}
+func upload(s *Shell)(string, int64){
+	peerId := int64(80)
+	offlineNoneTimeStamp := time.Stamp
+	hash := "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F"
+
+	privKey, _ := crypto.ToPrivKey(privateKey)
+	timeNonce := fmt.Sprint("",strconv.FormatInt(peerId, 10), offlineNoneTimeStamp)
+	timeNonceBytes := []byte(timeNonce)
+	sign, err := privKey.Sign(timeNonceBytes)
+	if err != nil{
+		log.Error(err)
+	}
+
+	options := func(rb *RequestBuilder) error {
+		rb.Option("peer-session-signature", sign).Option("nonce-timestamp", "")
+		return nil
+	}
+
+	sessionId , _ := s.StorageUpload(hash, options)
+	return sessionId, peerId
+}
+
+
 func TestAdd(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	mhash, err := s.Add(bytes.NewBufferString("Hello IPFS Shell tests"))
+	is.Nil(err)
+	is.Equal(mhash, "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F")
+}
+
+func TestUpload(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
@@ -407,3 +453,80 @@ func TestRefs(t *testing.T) {
 	sort.Strings(actual)
 	is.Equal(expected, actual)
 }
+
+/*
+func TestStorageUpload(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	peerId := int64(80)
+	offlineTimeStamp := time.Stamp
+	hash := "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F"
+	sessionId, err := s.StorageUpload(hash, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Nil(err)
+	is.Equal(sessionId, "1")
+}
+
+func TestStorageUploadInitStatus(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	sessionId, peerId := upload(s)
+	offlineTimeStamp := time.Stamp
+	storage, err := s.StorageUploadStatus(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Nil(err)
+	is.Equal(storage.Status, "init-sign")
+}
+
+func TestStorageUploadGetContractBatch(t *testing.T) {
+	raw := "This is the string"
+	contracts :=  []byte(raw)
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	sessionId, peerId := upload(s)
+	offlineTimeStamp := time.Stamp
+	storage, err := s.StorageUploadStatus(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Equal(storage.Status, "init-sign")
+	respContracts, err := s.StorageUploadGetContractBatch(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Nil(err)
+	is.Equal(contracts, respContracts)
+}
+
+func TestShell_StorageUploadSignBatch(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	sessionId, peerId := upload(s)
+	offlineTimeStamp := time.Stamp
+	privateKey := "f65a52c238ffb69b93d954c769ea992d"
+	storage, err := s.StorageUploadStatus(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Equal(storage.Status, "init-sign")
+	respContracts, err := s.StorageUploadGetContractBatch(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	respContractBytes, err := s.StorageUploadSignBatch(sessionId, peerId, offlineTimeStamp, respContracts , peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Nil(err)
+	is.Equal(respContractBytes, Sign(privateKey, respContracts))
+}
+*/
+/*
+func TestStorageUploadPaymentStatus(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	sessionId, peerId := upload(s)
+	offlineTimeStamp := time.Stamp
+
+	initStatus, err := s.StorageUploadStatus(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	is.Equal(initStatus, "init-sign")
+
+	//
+	respUnsignedContracts, err := s.StorageUploadGetContractBatch(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	respSignedInit, err := s.StorageUploadSignBatch(sessionId, peerId, offlineNonceTimeStamp, respUnsignedContracts )
+	paymentStatus, err := s.StorageUploadStatus(sessionId, peerId, offlineNonceTimeStamp)
+	is.Equal(paymentStatus, "payment-sign")
+	is.Nil(err)
+	is.Equal(respSignedInit, "okay")
+
+    //
+	respUnsignedPaymentContracts, err := s.StorageUploadGetContractBatch(sessionId, peerId, offlineNonceTimeStamp)
+	respSignedPayment, err := s.StorageUploadSignBatch(sessionId, peerId, offlineNonceTimeStamp, respUnsignedPaymentContracts )
+	storage, err := s.StorageUploadStatus(sessionId, peerId, offlineNonceTimeStamp)
+	is.Equal(storage.Status, "complete")
+	is.Nil(err)
+	is.Equal(respSignedPayment, "okay")
+}*/
