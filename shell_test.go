@@ -4,59 +4,71 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
+	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/TRON-US/go-btfs-api/options"
-	"github.com/cheekybits/is"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/tron-us/go-btfs-common/crypto"
+
+	"github.com/cheekybits/is"
+	"github.com/ipfs/go-cid"
+	"github.com/jarcoal/httpmock"
+	mh "github.com/multiformats/go-multihash"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
-	examplesHash = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
+	examplesHash = "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg2G"
 	shellUrl     = "localhost:5001"
-	privateKey = "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv"
+	privateKey   = `CAISIMozgNaJkUdEzxtIguLWpzjRxcEDwDDC0gNv13r8fa53`
 )
 
-func peerSessionSignature(privateKey string, timestamp string, peerId int64) string {
-	privKey, _ := crypto.ToPrivKey(privateKey)
-	timeNonce := fmt.Sprint("",strconv.FormatInt(peerId, 10), timestamp)
+func peerSessionSignature(privateKey string, timestamp string, peerId string) string {
+	privKey, err := crypto.ToPrivKey(privateKey)
+	if err != nil {
+		log.Error(err)
+	}
+	timeNonce := fmt.Sprint("", peerId, timestamp)
 	timeNonceBytes := []byte(timeNonce)
 	sign, err := privKey.Sign(timeNonceBytes)
-	if err != nil{
+	if err != nil {
 		log.Error(err)
 	}
 	return string(sign)
 }
-func upload(s *Shell)(string, int64){
-	peerId := int64(80)
-	offlineNoneTimeStamp := time.Stamp
-	hash := "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F"
 
-	privKey, _ := crypto.ToPrivKey(privateKey)
-	timeNonce := fmt.Sprint("",strconv.FormatInt(peerId, 10), offlineNoneTimeStamp)
-	timeNonceBytes := []byte(timeNonce)
-	sign, err := privKey.Sign(timeNonceBytes)
-	if err != nil{
-		log.Error(err)
+func upload(s *Shell) (string, string) {
+
+	offlineTimeStamp := time.Stamp
+	hostname, _ := os.Hostname()
+	pid := string(os.Getpid())
+
+	pref := cid.Prefix{
+		Version:  1,
+		Codec:    cid.Raw,
+		MhType:   mh.SHA2_256,
+		MhLength: -1, // default length
 	}
 
+	peerId, _ := pref.Sum([]byte(fmt.Sprint("", hostname, pid, offlineTimeStamp)))
+	timeNonce := fmt.Sprint("", offlineTimeStamp, examplesHash, peerId)
 	options := func(rb *RequestBuilder) error {
-		rb.Option("peer-session-signature", sign).Option("nonce-timestamp", "")
+		rb.Option("peer-session-signature", "")
 		return nil
 	}
 
-	sessionId , _ := s.StorageUpload(hash, options)
-	return sessionId, peerId
+	sessionId, _ := s.StorageUpload(examplesHash, peerId.String(), timeNonce, peerSessionSignature(privateKey, offlineTimeStamp, peerId.String()), options)
+	return sessionId, peerId.String()
 }
-
 
 func TestAdd(t *testing.T) {
 	is := is.New(t)
@@ -454,31 +466,364 @@ func TestRefs(t *testing.T) {
 	is.Equal(expected, actual)
 }
 
-/*
+type ShardItem struct {
+	ContractId string `json:contractid`
+	Price      string `json:price`
+	Host       string `json:host`
+	Status     string `json:status`
+}
+type StatusResponse struct {
+	Status   string      `json:staus`
+	Filehash string      `json:filehash`
+	Shards   []ShardItem `json:shards`
+}
+
+type ContractBatchResponse struct {
+	Contracts [30]ContractItem
+}
+
+type StatusRequest struct {
+	SessionId string `json:sessionid`
+}
+type ContractBatchRequest struct {
+	SessionId              string `json:sessionid`
+	PeerId                 string `json:peerid`
+	NonceTimeStamp         int64  `json:noncetimestamp`
+	UploadSessionSignature string `json:uploadsessionsignature`
+	SessionStatus          string `json:sessionstatus`
+}
+type AccessStatus interface {
+	getStatus() (StatusResponse, error)
+}
+type Status struct {
+	Request StatusRequest
+}
+
+type ContractBatch struct {
+	Request ContractBatchRequest
+}
+
+func (cb ContractBatch) getContractsBatch() (ContractBatchResponse, error) {
+	// Access the API
+	url := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/getcontractbatch?session-id=%s&peer-id=%s&nonce-timestamp=%v&upload-session-signature=%s&session-status=%s", cb.Request.SessionId, cb.Request.PeerId, cb.Request.NonceTimeStamp, cb.Request.UploadSessionSignature, cb.Request.SessionStatus)
+
+	// Build the request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Error(err)
+		return ContractBatchResponse{}, err
+	}
+
+	// Create an HTTP Client
+	client := &http.Client{}
+
+	// Send the request via a client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+		return ContractBatchResponse{}, err
+	}
+
+	// Defer the closing of the body
+	defer resp.Body.Close()
+
+	var rqResp ContractBatchResponse
+	// Use json.Decode for reading streams of JSON data
+	if err := json.NewDecoder(resp.Body).Decode(&rqResp); err != nil {
+		log.Error(err)
+		return ContractBatchResponse{}, err
+	}
+
+	return rqResp, nil
+}
+func (s Status) getStatus() (StatusResponse, error) {
+
+	// Access the API
+	url := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", s.Request.SessionId)
+
+	// Build the request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Error(err)
+		return StatusResponse{}, err
+	}
+
+	// Create an HTTP Client
+	client := &http.Client{}
+
+	// Send the request via a client
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+		return StatusResponse{}, err
+	}
+
+	// Defer the closing of the body
+	defer resp.Body.Close()
+
+	var rqResp StatusResponse
+	// Use json.Decode for reading streams of JSON data
+	if err := json.NewDecoder(resp.Body).Decode(&rqResp); err != nil {
+		log.Error(err)
+		return StatusResponse{}, err
+	}
+
+	return rqResp, nil
+}
+func TestStorageUploadInitStatus(t *testing.T) {
+
+	assert := assert.New(t)
+
+	//activate http mock
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	//create a responder to cycle through the offline signing states
+	responder := httpmock.NewStringResponder(200, `{
+	  "Status": "uninitialized",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder2 := httpmock.NewStringResponder(200, `{
+	  "Status": "initSignReadyForEscrow",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder3 := httpmock.NewStringResponder(200, `{
+	  "Contracts": [
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15",
+		  "ContractId": 1
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg16",
+		  "ContractId": 2
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg17",
+		  "ContractId": 3
+		}
+	  ]
+	}`)
+	responder4 := httpmock.NewStringResponder(200, `{
+	  "Status": "initSignReadyForGuard",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder5 := httpmock.NewStringResponder(200, `{
+	  "Contracts": [
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg18",
+		  "ContractId": 1
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg19",
+		  "ContractId": 2
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg20",
+		  "ContractId": 3
+		}
+	  ]
+	}`)
+
+	//create a test
+	status := Status{Request: StatusRequest{"1"}}
+
+	escrowContract := ContractBatch{Request: ContractBatchRequest{"1", "1", 1, "TTT"}}
+
+	//create request string and register string with responder
+	url := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url, responder)
+	//call the endpoint to retreive the mocked values of the responder
+	resp, _ := status.getStatus()
+	assert.Equal(resp.Status, "uninitialized")
+	httpmock.Reset()
+
+	//wait for a few seconds
+
+	url2 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url2, responder2)
+	resp2, _ := status.getStatus()
+	assert.Equal(resp2.Status, "initSignReadyForEscrow")
+	httpmock.Reset()
+
+	//get contracts
+	url3 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/getcontractbatch?session-id=%s&peer-id=%s&nonce-timestamp=%v&upload-session-signature=%s&session-status=&%s", escrowContract.Request.SessionId, escrowContract.Request.PeerId, escrowContract.Request.NonceTimeStamp, escrowContract.Request.UploadSessionSignature, resp2)
+	httpmock.RegisterResponder("GET", url3, responder3)
+	resp3, _ := escrowContract.getContractsBatch()
+	assert.Equal(resp3.Contracts[0].Contract, "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15")
+	httpmock.Reset()
+
+	//sign and send contracts
+
+	url4 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url4, responder4)
+	resp4, _ := status.getStatus()
+	assert.Equal(resp4.Status, "initSignReadyForGuard")
+	httpmock.Reset()
+
+	//get contracts
+
+	url5 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/getcontractbatch?session-id=%s&peer-id=%s&nonce-timestamp=%v&upload-session-signature=%s", escrowContract.Request.SessionId, escrowContract.Request.PeerId, escrowContract.Request.NonceTimeStamp, escrowContract.Request.UploadSessionSignature)
+	httpmock.RegisterResponder("GET", url5, responder5)
+	resp5, _ := escrowContract.getContractsBatch()
+	assert.Equal(resp5.Contracts[0].Contract, "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15")
+	httpmock.Reset()
+
+	//sign and send contracts
+
+}
+
+func TestStorageUploadPaymentStatus(t *testing.T) {
+
+	assert := assert.New(t)
+
+	//activate http mock
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+
+	//create a responder to cycle through the offline signing states
+	responder := httpmock.NewStringResponder(200, `{
+	  "Status": "uninitialized",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder2 := httpmock.NewStringResponder(200, `{
+	  "Status": "initSignReadyForEscrow",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder3 := httpmock.NewStringResponder(200, `{
+	  "Contracts": [
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15",
+		  "ContractId": 1
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg16",
+		  "ContractId": 2
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg17",
+		  "ContractId": 3
+		}
+	  ]
+	}`)
+	responder4 := httpmock.NewStringResponder(200, `{
+	  "Status": "initSignReadyForGuard",
+	  "FileHash": "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15"
+	}`)
+	responder5 := httpmock.NewStringResponder(200, `{
+	  "Contracts": [
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg18",
+		  "ContractId": 1
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg19",
+		  "ContractId": 2
+		},
+		{
+		  "Contract":"QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg20",
+		  "ContractId": 3
+		}
+	  ]
+	}`)
+
+	//create a test
+	status := Status{Request: StatusRequest{"1"}}
+
+	escrowContract := ContractBatch{Request: ContractBatchRequest{"1", "1", 1, "TTT", "XXX"}}
+
+	//create request string and register string with responder
+	url := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url, responder)
+	//call the endpoint to retreive the mocked values of the responder
+	resp, _ := status.getStatus()
+	assert.Equal(resp.Status, "uninitialized")
+	httpmock.Reset()
+
+	//wait for a few seconds
+
+	url2 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url2, responder2)
+	resp2, _ := status.getStatus()
+	assert.Equal(resp2.Status, "initSignReadyForEscrow")
+	httpmock.Reset()
+
+	//get contracts
+	url3 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/getcontractbatch?session-id=%s&peer-id=%s&nonce-timestamp=%v&upload-session-signature=%s", escrowContract.Request.SessionId, escrowContract.Request.PeerId, escrowContract.Request.NonceTimeStamp, escrowContract.Request.UploadSessionSignature)
+	httpmock.RegisterResponder("GET", url3, responder3)
+	resp3, _ := escrowContract.getContractsBatch()
+	assert.Equal(resp3.Contracts[0].Contract, "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15")
+	httpmock.Reset()
+
+	//sign and send contracts
+
+	url4 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/status?session-id=%s", status.Request.SessionId)
+	httpmock.RegisterResponder("GET", url4, responder4)
+	resp4, _ := status.getStatus()
+	assert.Equal(resp4.Status, "initSignReadyForGuard")
+	httpmock.Reset()
+
+	//get contracts
+
+	url5 := fmt.Sprintf("http://localhost:5001/api/v1/storage/upload/getcontractbatch?session-id=%s&peer-id=%s&nonce-timestamp=%v&upload-session-signature=%s", escrowContract.Request.SessionId, escrowContract.Request.PeerId, escrowContract.Request.NonceTimeStamp, escrowContract.Request.UploadSessionSignature)
+	httpmock.RegisterResponder("GET", url5, responder5)
+	resp5, _ := escrowContract.getContractsBatch()
+	assert.Equal(resp5.Contracts[0].Contract, "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg15")
+	httpmock.Reset()
+
+	//sign and send contracts
+
+}
+
 func TestStorageUpload(t *testing.T) {
 	is := is.New(t)
-	s := NewShell(shellUrl)
-	peerId := int64(80)
+	s := NewShell("https://storageupload.free.beeceptor.com")
 	offlineTimeStamp := time.Stamp
-	hash := "QmUfZ9rAdhV5ioBzXKdUTh2ZNsz9bzbkaLVyQ8uc8pj21F"
-	sessionId, err := s.StorageUpload(hash, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
+	hostname, err := os.Hostname()
+	pid := string(os.Getpid())
+
+	pref := cid.Prefix{
+		Version:  1,
+		Codec:    cid.Raw,
+		MhType:   mh.SHA2_256,
+		MhLength: -1, // default length
+	}
+
+	peerId, err := pref.Sum([]byte(fmt.Sprint("", hostname, pid, offlineTimeStamp)))
+	timeNonce := fmt.Sprint("", offlineTimeStamp, examplesHash, peerId)
+	options := func(rb *RequestBuilder) error {
+		return nil
+	}
+
+	sessionId, err := s.StorageUpload(examplesHash, peerId.String(), timeNonce, peerSessionSignature(privateKey, offlineTimeStamp, peerId.String()), options)
 	is.Nil(err)
-	is.Equal(sessionId, "1")
+	is.NotNil(sessionId)
 }
 
-func TestStorageUploadInitStatus(t *testing.T) {
-	is := is.New(t)
-	s := NewShell(shellUrl)
-	sessionId, peerId := upload(s)
-	offlineTimeStamp := time.Stamp
-	storage, err := s.StorageUploadStatus(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
-	is.Nil(err)
-	is.Equal(storage.Status, "init-sign")
-}
+/*func TestStorageUploadGetContractBatch(t *testing.T) {
 
-func TestStorageUploadGetContractBatch(t *testing.T) {
-	raw := "This is the string"
-	contracts :=  []byte(raw)
+	//check status for initSignReadyForEscrow:
+	//get ContractBatch
+
+	//check status for initSignReadyForGuard:
+	//get ContractBatch
+
+	type Contracts struct {
+		Contracts [30]ContractItem
+	}
+
+	var contracts Contracts
+	errEscrow := json.Unmarshal(contractsEscrow, &contracts)
+	if errEscrow != nil {
+		log.Error(errEscrow)
+	}
+
+	errGuard := json.Unmarshal(contractsGuard, &contracts)
+	if errGuard != nil {
+		log.Error(errGuard)
+	}
+
+	fmt.Println("Here is the first contract: ", contracts.Contracts[0].Contract)
+
 	is := is.New(t)
 	s := NewShell(shellUrl)
 	sessionId, peerId := upload(s)
@@ -487,9 +832,9 @@ func TestStorageUploadGetContractBatch(t *testing.T) {
 	is.Equal(storage.Status, "init-sign")
 	respContracts, err := s.StorageUploadGetContractBatch(sessionId, peerId, offlineTimeStamp, peerSessionSignature(privateKey, offlineTimeStamp, peerId))
 	is.Nil(err)
-	is.Equal(contracts, respContracts)
-}
-
+	is.Equal(respContracts, raw)
+}*/
+/*
 func TestShell_StorageUploadSignBatch(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
