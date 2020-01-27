@@ -64,7 +64,7 @@ func main() {
 	configParameters["hash"] = "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg2G"
 	configParameters["offlinePeerId"] = "16Uiu2HAkwQZvY1mQjWabNr6eDKR7SW5i1KsnVyQpZqWmtRJ6u6SB"
 	configParameters["offlineNonceTimestamp"] = time.Now().String()
-	configParameters["offlineSessionSignature"] = fmt.Sprintf("%s%s%s", configParameters["offlinePeerId"], configParameters["hash"], configParameters["offlineNonceTimestamp"])
+	configParameters["offlineSessionSignature"] = fmt.Sprintf("%s:%s:%s", configParameters["offlinePeerId"], configParameters["hash"], configParameters["offlineNonceTimestamp"])
 	configParameters["privateKey"] = `CAISINpkyjyl3J7dPQYKkp7YuHrnHRKhfZkf2gkUyhn7Nyej`
 	fmt.Println("Starting offline signing demo ... ")
 	demoApp(configParameters)
