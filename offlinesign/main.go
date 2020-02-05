@@ -1,57 +1,100 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/TRON-US/go-btfs-api/utils"
 	"time"
 
 	shell "github.com/TRON-US/go-btfs-api"
+
 	"github.com/opentracing/opentracing-go/log"
 
 )
-func demoApp(config map[string]string){
 
-	localUrl := "http://localhost:5001"
+func demoApp(demoState chan string){
+
+	//defer close(demoState)
+
+	//localUrl := "http://localhost:5001"
+	localUrl := "https://storageupload.free.beeceptor.com"
 	s := shell.NewShell(localUrl)
-	//upload the hash
-	respUpload, err := s.StorageUpload(config["hash"], config["offlinePeerId"], config["offlineSessionSignature"], config["offlineSessionSignature"])
+
+	rand := utils.RandString(32)
+
+	//upload a random data and retrieve the hash
+	mhash, err := s.Add(bytes.NewBufferString(rand), shell.OnlyHash(true))
 	if err != nil {
 		log.Error(err)
 	}
 
-	sessionId := respUpload
+	//upload the hash
+	sessionId, err := s.StorageUpload(mhash)
+	if err != nil {
+		log.Error(err)
+	}
 
 	for {
 		//pool for offline signing status
-		uploadResp, statusError := s.StorageUploadStatus(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], config["offlineSessionSignature"] )
+		uploadResp, statusError := s.StorageUploadStatus(sessionId, mhash)
 		if statusError != nil {
 			log.Error(statusError)
 		}
 		switch uploadResp.Status {
-		case "InitSignReadyForEscrowStatus", "InitSignReadyForGuardStatus":
-			batchContracts, errorUnsignedContracts := s.StorageUploadGetContractBatch(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], config["offlineSessionSignature"], uploadResp.Status)
+		case "Uninitialized":
+			demoState <- uploadResp.Status
+			time.Sleep(time.Second*10)
+			continue
+		case "initSignReadyForEscrow", "initSignReadyForGuard":
+			demoState <- uploadResp.Status
+			batchContracts, errorUnsignedContracts := s.StorageUploadGetContractBatch(sessionId, mhash, uploadResp.Status)
 			if errorUnsignedContracts != nil {
 				log.Error(errorUnsignedContracts)
 			}
-			s.StorageUploadSignBatch(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], batchContracts, config["offlineSessionSignature"], uploadResp.Status, config["privateKey"])
+			s.StorageUploadSignBatch(sessionId, mhash, batchContracts, uploadResp.Status)
 			time.Sleep(time.Second*10)
 			continue
-		case "BalanceSignReadyStatus", "PaySignReadyStatus", "GuardSignReadyStatus":
-			unsignedData, errorUnsignedContracts := s.StorageUploadGetUnsignedData(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], config["offlineSessionSignature"], uploadResp.Status )
+		case "balanceSignReady", "payChannelSignReady", "payRequestSignReady", "guardSignReady":
+			demoState <- uploadResp.Status
+			unsignedData, errorUnsignedContracts := s.StorageUploadGetUnsignedData(sessionId, mhash, uploadResp.Status )
 			if errorUnsignedContracts != nil {
 				log.Error(errorUnsignedContracts)
 			}
 			switch unsignedData.Opcode{
 			case "balance":
-				s.StorageUploadSignBalance(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], unsignedData, config["offlineSessionSignature"], uploadResp.Status, config["privateKey"])
+				s.StorageUploadSignBalance(sessionId, mhash, unsignedData, uploadResp.Status)
+			case "paychannel":
+				s.StorageUploadSignPayChannel(sessionId, mhash, unsignedData, uploadResp.Status, unsignedData.Price)
+			case "payrequest":
+				s.StorageUploadSignPayRequest(sessionId, mhash, unsignedData, uploadResp.Status)
 			case "sign":
-				s.StorageUploadSign(sessionId, config["offlinePeerId"], config["offlineNonceTimestamp"], unsignedData , config["offlineSessionSignature"], uploadResp.Status, config["privateKey"])
+				s.StorageUploadSign(sessionId, mhash, unsignedData, uploadResp.Status)
 			}
 			time.Sleep(time.Second*10)
 			continue
-		case "CompleteStatus":
+		case "retrySignReady":
+			demoState <- uploadResp.Status
+			batchContracts, errorUnsignedContracts := s.StorageUploadGetContractBatch(sessionId,mhash, uploadResp.Status)
+			if errorUnsignedContracts != nil {
+				log.Error(errorUnsignedContracts)
+			}
+			s.StorageUploadSignBatch(sessionId, mhash, batchContracts, uploadResp.Status)
+			time.Sleep(time.Second*10)
+			continue
+		case "retrySignProcess":
+			demoState <- uploadResp.Status
+			time.Sleep(time.Second*10)
+			continue
+		case "init":
+			demoState <- uploadResp.Status
+			time.Sleep(time.Second*10)
+			continue
+		case "complete":
+			demoState <- uploadResp.Status
 			break
-		case "ErrStatus":
+		case "error":
+			demoState <- uploadResp.Status
 			log.Error(errors.New("errStatus: session experienced an error. stopping app"))
 			break
 		}
@@ -60,13 +103,16 @@ func demoApp(config map[string]string){
 }
 func main() {
 	//need to call the add the file first to obtain the file hash
-	configParameters :=  make(map[string]string)
-	configParameters["hash"] = "QmWkY8xpySL6GQTSaEh9ZJ2MyWSpzUraUjT18X1Jwvwg2G"
-	configParameters["offlinePeerId"] = "16Uiu2HAkwQZvY1mQjWabNr6eDKR7SW5i1KsnVyQpZqWmtRJ6u6SB"
-	configParameters["offlineNonceTimestamp"] = time.Now().String()
-	configParameters["offlineSessionSignature"] = fmt.Sprintf("%s:%s:%s", configParameters["offlinePeerId"], configParameters["hash"], configParameters["offlineNonceTimestamp"])
-	configParameters["privateKey"] = `CAISINpkyjyl3J7dPQYKkp7YuHrnHRKhfZkf2gkUyhn7Nyej`
+	demoState := make(chan string)
 	fmt.Println("Starting offline signing demo ... ")
-	demoApp(configParameters)
+	go demoApp(demoState)
+	for {
+		select {
+		case i := <- demoState:
+			fmt.Println("Current status of offline signing demo: " + i)
+		case <-time.After(30*time.Second): //simulates timeout
+			fmt.Println("Time out: No news in 30 seconds")
+		}
+	}
 	fmt.Println("Complete offline signing demo ... ")
 }
