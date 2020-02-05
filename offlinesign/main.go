@@ -18,7 +18,7 @@ func demoApp(demoState chan string){
 	//defer close(demoState)
 
 	//localUrl := "http://localhost:5001"
-	localUrl := "https://storageupload.free.beeceptor.com"
+	localUrl := "http://demo9518058.mockable.io/"
 	s := shell.NewShell(localUrl)
 
 	rand := utils.RandString(32)
@@ -42,7 +42,7 @@ func demoApp(demoState chan string){
 			log.Error(statusError)
 		}
 		switch uploadResp.Status {
-		case "Uninitialized":
+		case "uninitialized":
 			demoState <- uploadResp.Status
 			time.Sleep(time.Second*10)
 			continue
@@ -110,7 +110,7 @@ func main() {
 		select {
 		case i := <- demoState:
 			fmt.Println("Current status of offline signing demo: " + i)
-		case <-time.After(30*time.Second): //simulates timeout
+		case <-time.After(20*time.Second): //simulates timeout
 			fmt.Println("Time out: No news in 30 seconds")
 		}
 	}

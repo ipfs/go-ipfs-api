@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	config "github.com/TRON-US/go-btfs-config"
 	serialize "github.com/TRON-US/go-btfs-config/serialize"
 	"github.com/opentracing/opentracing-go/log"
@@ -26,15 +27,19 @@ func init() {
 		PrivateKey = s
 	}else{
 		PrivateKey = config.Identity.PrivKey
+
 	}
 	if _, s := env.GetEnv("PEER_ID"); s != "" {
 		PeerId = s
 	}else{
 		PeerId = config.Identity.PeerID
+
 	}
 	if _, s := env.GetEnv("PUBLIC_KEY"); s != "" {
 		PublicKey = s
 	}
+	fmt.Println("Loaded private key: " + PrivateKey)
+	fmt.Println("Loaded peer id: " + PeerId)
 }
 
 func LoadPrivateKey () (string) {
