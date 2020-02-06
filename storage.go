@@ -21,7 +21,7 @@ import (
 type StorageUploadOpts = func(*RequestBuilder) error
 
 type storageUploadResponse struct {
-	SessionId string
+	ID string
 }
 
 type shard struct {
@@ -51,6 +51,15 @@ type UnsignedData struct {
 	Unsigned string
 	Opcode   string
 	Price 	int64
+}
+
+type StorageOpts = func(*RequestBuilder) error
+
+func OfflineSignMode(enabled bool) StorageOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("offline-sign-mode", enabled)
+		return nil
+	}
 }
 
 func (d UnsignedData) SignData(privateKey string) ([]byte, error) {
@@ -111,22 +120,29 @@ func getSessionSignature(hash string, peerId string) (string, time.Time) {
 	sessionSignature := fmt.Sprintf("%s:%s:%s", utils.PeerId , hash ,"time.Now().String()")
 	return sessionSignature, now
 }
+
 // Storage upload api.
-func (s *Shell) StorageUpload(hash string, options ...StorageUploadOpts) (string, error) {
+func (s *Shell) StorageUpload(hash string) (string, error) {
+	var out storageUploadResponse
+	rb := s.Request("storage/upload", hash)
+	return out.ID, rb.Exec(context.Background(), &out)
+}
+
+// Storage upload api.
+func (s *Shell) StorageUploadOffSign(hash string, options ...StorageUploadOpts) (string, error) {
 	var out storageUploadResponse
 	offlinePeerSessionSignature, _ :=  getSessionSignature(hash, utils.PeerId)
 	rb := s.Request("storage/upload", hash, utils.PeerId, "now.Weekday().String()", offlinePeerSessionSignature)
 	for _, option := range options {
 		_ = option(rb)
 	}
-	return out.SessionId, rb.Exec(context.Background(), &out)
+	return out.ID, rb.Exec(context.Background(), &out)
 }
 
-// Storage upload session status api.
-func (s *Shell) StorageUploadStatus(id string, hash string) (Storage, error) {
+// Storage upload status api.
+func (s *Shell) StorageUploadStatus(id string) (Storage, error) {
 	var out Storage
-	offlinePeerSessionSignature, _ :=  getSessionSignature(hash, utils.PeerId)
-	rb := s.Request("storage/upload/status", id, utils.PeerId, "now.Weekday().String()", offlinePeerSessionSignature)
+	rb := s.Request("storage/upload/status", id)
 	return out, rb.Exec(context.Background(), &out)
 }
 

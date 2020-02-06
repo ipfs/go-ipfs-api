@@ -17,8 +17,8 @@ func demoApp(demoState chan string){
 
 	//defer close(demoState)
 
-	//localUrl := "http://localhost:5001"
-	localUrl := "http://demo9518058.mockable.io/"
+	localUrl := "http://localhost:5001"
+	//localUrl := "http://demo9518058.mockable.io/"
 	s := shell.NewShell(localUrl)
 
 	rand := utils.RandString(32)
@@ -30,14 +30,14 @@ func demoApp(demoState chan string){
 	}
 
 	//upload the hash
-	sessionId, err := s.StorageUpload(mhash)
+	sessionId, err := s.StorageUploadOffSign(mhash)
 	if err != nil {
 		log.Error(err)
 	}
 
 	for {
 		//pool for offline signing status
-		uploadResp, statusError := s.StorageUploadStatus(sessionId, mhash)
+		uploadResp, statusError := s.StorageUploadStatus(sessionId)
 		if statusError != nil {
 			log.Error(statusError)
 		}
