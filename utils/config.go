@@ -13,7 +13,7 @@ var (
 	PublicKey = ""
 )
 func init() {
-	spath, err := config.Filename("/Users/steve.yeom")
+	spath, err := config.Filename("/Users/uchenna")
 	if err != nil{
 		log.Error(err)
 	}
