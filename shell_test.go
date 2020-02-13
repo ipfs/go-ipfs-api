@@ -6,13 +6,13 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
+	"math/rand"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/TRON-US/go-btfs-api/options"
-	"github.com/TRON-US/go-btfs-api/utils"
 	"github.com/cheekybits/is"
 )
 
@@ -46,7 +46,7 @@ func TestAddWithCat(t *testing.T) {
 	s := NewShell(shellUrl)
 	s.SetTimeout(1 * time.Second)
 
-	rand := utils.RandString(32)
+	rand := randString(32)
 
 	mhash, err := s.Add(bytes.NewBufferString(rand))
 	is.Nil(err)
@@ -66,7 +66,7 @@ func TestAddOnlyHash(t *testing.T) {
 	s := NewShell(shellUrl)
 	s.SetTimeout(1 * time.Second)
 
-	rand := utils.RandString(32)
+	rand := randString(32)
 
 	mhash, err := s.Add(bytes.NewBufferString(rand), OnlyHash(true))
 	is.Nil(err)
@@ -79,7 +79,7 @@ func TestAddNoPin(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	h, err := s.Add(bytes.NewBufferString(utils.RandString(32)), Pin(false))
+	h, err := s.Add(bytes.NewBufferString(randString(32)), Pin(false))
 	is.Nil(err)
 
 	pins, err := s.Pins()
@@ -93,7 +93,7 @@ func TestAddNoPinDeprecated(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	h, err := s.AddNoPin(bytes.NewBufferString(utils.RandString(32)))
+	h, err := s.AddNoPin(bytes.NewBufferString(randString(32)))
 	is.Nil(err)
 
 	pins, err := s.Pins()
@@ -351,6 +351,33 @@ func TestSwarmPeers(t *testing.T) {
 	s := NewShell(shellUrl)
 	_, err := s.SwarmPeers(context.Background())
 	is.Nil(err)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+func randString(n int) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }
 
 func TestRefs(t *testing.T) {
