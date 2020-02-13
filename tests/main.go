@@ -14,7 +14,6 @@ import (
 var sh *shell.Shell
 var ncalls int
 
-
 var _ = time.ANSIC
 
 func sleep() {
