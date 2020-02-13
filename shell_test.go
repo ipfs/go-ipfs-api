@@ -408,11 +408,10 @@ func TestStorageUpload(t *testing.T) {
 	var storage Storage
 LOOP:
 	for {
-		storage, err := s.StorageUploadStatus(sessionId)
+		storage, err = s.StorageUploadStatus(sessionId)
 		is.Nil(err)
 		switch storage.Status {
 		case "complete":
-			fmt.Printf("%#v\n", storage.Status)
 			break LOOP
 		case "error":
 			fmt.Printf("%#v, %#v\n", storage.Status, storage.Message)
@@ -423,5 +422,60 @@ LOOP:
 			continue
 		}
 	}
-	fmt.Printf("#%v\n", storage.Status)
+	fmt.Printf("%#v\n", storage.Status)
+}
+
+func TestStorageUploadWithOffSign(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	mhash, err := s.Add(bytes.NewBufferString(string(randBytes(15))), OfflineSignMode(true), Chunker("reed-solomon-1-1-262144"))
+	is.Nil(err)
+
+	uts := s.GetUts()
+	sessionId, err := s.StorageUploadOffSign(mhash, uts, OfflineSignMode(true))
+	is.Nil(err)
+
+	var storage Storage
+LOOP:
+	for {
+		storage, err := s.StorageUploadStatus(sessionId)
+		is.Nil(err)
+		switch storage.Status {
+		case "complete":
+			break LOOP
+		case "error":
+			fmt.Printf("%#v, %#v\n", storage.Status, storage.Message)
+			t.Fatal(fmt.Errorf("%s", storage.Message))
+		case "initSignReadyEscrow", "initSignReadyGuard":
+			fmt.Printf("%#v\n", storage.Status)
+			c, err := s.StorageUploadGetContractBatch(sessionId, mhash, uts, storage.Status)
+			is.Nil(err)
+			_, err = s.StorageUploadSignBatch(sessionId, mhash, c, uts, storage.Status)
+			//is.Nil(err)
+			fmt.Printf("%#v\n", storage.Status)
+		case "balanceSignReady", "payChannelSignReady", "payRequestSignReady", "guardSignReady":
+			unsigned, err := s.StorageUploadGetUnsignedData(sessionId, mhash, uts, storage.Status)
+			is.Nil(err)
+			switch unsigned.Opcode {
+			case "balance":
+				_, err := s.StorageUploadSignBalance(sessionId, mhash, unsigned, uts, storage.Status)
+				is.Nil(err)
+			case "paychannel":
+				_, err := s.StorageUploadSignPayChannel(sessionId, mhash, unsigned, uts, storage.Status, unsigned.Price)
+				is.Nil(err)
+			case "payrequest":
+				_, err := s.StorageUploadSignPayRequest(sessionId, mhash, unsigned, uts, storage.Status)
+				is.Nil(err)
+			case "guard":
+				_, err := s.StorageUploadSignBalance(sessionId, mhash, unsigned, uts, storage.Status)
+				is.Nil(err)
+			}
+		default:
+			fmt.Printf("%#v continue \n", storage.Status)
+			sleepMoment()
+			continue
+		}
+	}
+	fmt.Printf("%#v\n", storage.Status)
 }
