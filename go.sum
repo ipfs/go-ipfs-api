@@ -157,6 +157,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/tron-us/go-btfs-common v0.2.11 h1:hxc7oUQHPViKzdaTZLHuS2vyYU1e6/IToZI7UY1p2Tk=
 github.com/tron-us/go-btfs-common v0.2.11/go.mod h1:9ND33JahGMg52sCC2/gO5DakLsd1Pg2lVe2CihW7lBE=
+github.com/tron-us/go-btfs-common v0.2.20 h1:IlYnFFGG8ACtKsnILranAIvLYTOGc9AuOJZsG2878go=
+github.com/tron-us/go-btfs-common v0.2.20/go.mod h1:Hph+eVvKK66rJZFjfiBzGkZKgPkKPTn7B8JsBIpW77Q=
 github.com/tron-us/go-common/v2 v2.0.5 h1:LiGEmOd0FVVRisFyg3AJWDWMXlM537M3JZ+gh75sBlw=
 github.com/tron-us/go-common/v2 v2.0.5/go.mod h1:GiKX9noBLHotkZAU+7ET4h7N0DYWnm3OcGHOFJg1Q68=
 github.com/tron-us/protobuf v1.3.4 h1:oqokl6jMAfe1fb/B6t1UMllbw/KtfdJcCn8plxPkHM8=

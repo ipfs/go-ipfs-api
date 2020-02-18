@@ -7,14 +7,16 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/tron-us/go-common/v2/env"
 )
+
 var (
 	PrivateKey = ""
-	PeerId = ""
-	PublicKey = ""
+	PeerId     = ""
+	PublicKey  = ""
 )
+
 func init() {
 	spath, err := config.Filename("/Users/steve.yeom")
-	if err != nil{
+	if err != nil {
 		log.Error(err)
 	}
 	config, err := serialize.Load(spath)
@@ -25,13 +27,13 @@ func init() {
 	//get variables via environment variable
 	if _, s := env.GetEnv("PRIVATE_KEY"); s != "" {
 		PrivateKey = s
-	}else{
+	} else {
 		PrivateKey = config.Identity.PrivKey
 
 	}
 	if _, s := env.GetEnv("PEER_ID"); s != "" {
 		PeerId = s
-	}else{
+	} else {
 		PeerId = config.Identity.PeerID
 
 	}
@@ -42,7 +44,7 @@ func init() {
 	fmt.Println("Loaded peer id: " + PeerId)
 }
 
-func LoadPrivateKey () (string) {
+func LoadPrivateKey() string {
 	if _, s := env.GetEnv("PRIVATE_KEY"); s != "" {
 		PrivateKey = s
 		return s
@@ -50,7 +52,7 @@ func LoadPrivateKey () (string) {
 	return ""
 }
 
-func LoadPeerId () (string) {
+func LoadPeerId() string {
 	if _, s := env.GetEnv("PEER_ID"); s != "" {
 		PeerId = s
 		return s
@@ -58,11 +60,10 @@ func LoadPeerId () (string) {
 	return ""
 }
 
-func LoadPublicKey () (string) {
+func LoadPublicKey() string {
 	if _, s := env.GetEnv("PUBLIC_KEY"); s != "" {
 		PublicKey = s
 		return s
 	}
 	return ""
 }
-

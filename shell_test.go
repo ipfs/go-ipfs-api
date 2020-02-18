@@ -399,10 +399,14 @@ func TestStorageUpload(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
+	//mhash, err := s.Add(bytes.NewBufferString("abcd 1234 efgh 567890 ijkl 9012"), Chunker("reed-solomon-1-1-256000"))
 	mhash, err := s.Add(bytes.NewBufferString(string(randBytes(15))), Chunker("reed-solomon-1-1-256000"))
 	is.Nil(err)
 
-	sessionId, err := s.StorageUpload(mhash)
+	//sessionId, err := s.StorageUpload(mhash)
+	sessionId, err := s.StorageUpload(mhash, UploadMode("custom"),
+		Hosts(`16Uiu2HAkx7gZMP4H8hn48VokgH8hBPhZdGVp7qsqX79xcHM9oecz,16Uiu2HAkx7gZMP4H8hn48VokgH8hBPhZdGVp7qsqX79xcHM9oecz`))
+
 	is.Nil(err)
 
 	var storage Storage
@@ -429,11 +433,14 @@ func TestStorageUploadWithOffSign(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	mhash, err := s.Add(bytes.NewBufferString(string(randBytes(15))), OfflineSignMode(true), Chunker("reed-solomon-1-1-262144"))
+	mhash, err := s.Add(bytes.NewBufferString("abcd 1234 efgh 567890 ijkl 9012"), Chunker("reed-solomon-1-1-256000"))
+	//mhash, err := s.Add(bytes.NewBufferString(string(randBytes(15))), OfflineSignMode(true), Chunker("reed-solomon-1-1-262144"))
 	is.Nil(err)
 
 	uts := s.GetUts()
-	sessionId, err := s.StorageUploadOffSign(mhash, uts, OfflineSignMode(true))
+	//sessionId, err := s.StorageUploadOffSign(mhash, uts, OfflineSignMode(true))
+	sessionId, err := s.StorageUploadOffSign(mhash, uts, OfflineSignMode(true), UploadMode("custom"),
+		Hosts(`16Uiu2HAkx7gZMP4H8hn48VokgH8hBPhZdGVp7qsqX79xcHM9oecz,16Uiu2HAkx7gZMP4H8hn48VokgH8hBPhZdGVp7qsqX79xcHM9oecz`))
 	is.Nil(err)
 
 	var storage Storage

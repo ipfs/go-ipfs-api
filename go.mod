@@ -12,7 +12,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.0.4
 	github.com/multiformats/go-multiaddr-net v0.0.1
 	github.com/opentracing/opentracing-go v1.1.0
-	github.com/tron-us/go-btfs-common v0.2.11
+	github.com/tron-us/go-btfs-common v0.2.20
 	github.com/tron-us/go-common/v2 v2.0.5
 	github.com/whyrusleeping/tar-utils v0.0.0-20180509141711-8c6c8ba81d5c
 	go.uber.org/zap v1.10.0
