@@ -247,7 +247,7 @@ func TestPinsStream(t *testing.T) {
 	h, err := s.Add(bytes.NewBufferString("go-ipfs-api pins test 0C7023F8-1FEC-4155-A8E0-432A5853F46B"))
 	is.Nil(err)
 
-	pinChan, err := s.PinsStream()
+	pinChan, err := s.PinsStream(context.Background())
 	is.Nil(err)
 
 	pins := accumulatePins(pinChan)
@@ -258,7 +258,7 @@ func TestPinsStream(t *testing.T) {
 	err = s.Unpin(h)
 	is.Nil(err)
 
-	pinChan, err = s.PinsStream()
+	pinChan, err = s.PinsStream(context.Background())
 	is.Nil(err)
 
 	pins = accumulatePins(pinChan)
@@ -269,7 +269,7 @@ func TestPinsStream(t *testing.T) {
 	err = s.Pin(h)
 	is.Nil(err)
 
-	pinChan, err = s.PinsStream()
+	pinChan, err = s.PinsStream(context.Background())
 	is.Nil(err)
 
 	pins = accumulatePins(pinChan)
