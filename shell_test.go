@@ -239,6 +239,54 @@ func TestPins(t *testing.T) {
 	is.Equal(info.Type, RecursivePin)
 }
 
+func TestPinsStream(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	// Add a thing, which pins it by default
+	h, err := s.Add(bytes.NewBufferString("go-ipfs-api pins test 0C7023F8-1FEC-4155-A8E0-432A5853F46B"))
+	is.Nil(err)
+
+	pinChan, err := s.PinsStream(context.Background())
+	is.Nil(err)
+
+	pins := accumulatePins(pinChan)
+
+	_, ok := pins[h]
+	is.True(ok)
+
+	err = s.Unpin(h)
+	is.Nil(err)
+
+	pinChan, err = s.PinsStream(context.Background())
+	is.Nil(err)
+
+	pins = accumulatePins(pinChan)
+
+	_, ok = pins[h]
+	is.False(ok)
+
+	err = s.Pin(h)
+	is.Nil(err)
+
+	pinChan, err = s.PinsStream(context.Background())
+	is.Nil(err)
+
+	pins = accumulatePins(pinChan)
+
+	_type, ok := pins[h]
+	is.True(ok)
+	is.Equal(_type, RecursivePin)
+}
+
+func accumulatePins(pinChan <-chan PinStreamInfo) map[string]string {
+	pins := make(map[string]string)
+	for pin := range pinChan {
+		pins[pin.Cid] = pin.Type
+	}
+	return pins
+}
+
 func TestPatch_rmLink(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
