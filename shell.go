@@ -213,10 +213,10 @@ type PinStreamInfo struct {
 
 // PinsStream is a streamed version of Pins. It returns a channel of the pins
 // with their type, one of DirectPin, RecursivePin, or IndirectPin.
-func (s *Shell) PinsStream() (<-chan PinStreamInfo, error) {
+func (s *Shell) PinsStream(ctx context.Context) (<-chan PinStreamInfo, error) {
 	resp, err := s.Request("pin/ls").
 		Option("stream", true).
-		Send(context.Background())
+		Send(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,11 @@ func (s *Shell) PinsStream() (<-chan PinStreamInfo, error) {
 			if err != nil {
 				return
 			}
-			out <- pin
+			select {
+			case out <- pin:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 
