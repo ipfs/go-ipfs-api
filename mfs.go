@@ -204,7 +204,7 @@ func (filesWrite) Hash(hash string) FilesOpt {
 }
 
 // FilesChcid change the cid version or hash function of the root node of a given path
-func (s *Shell) FilesChcid(path string, options ...FilesOpt) error {
+func (s *Shell) FilesChcid(ctx context.Context, path string, options ...FilesOpt) error {
 	if len(path) == 0 {
 		path = "/"
 	}
@@ -216,23 +216,22 @@ func (s *Shell) FilesChcid(path string, options ...FilesOpt) error {
 		}
 	}
 
-	return rb.Exec(context.Background(), nil)
+	return rb.Exec(ctx, nil)
 }
 
 // FilesCp copy any IPFS files and directories into MFS (or copy within MFS)
-func (s *Shell) FilesCp(src string, dest string) error {
-	return s.Request("files/cp", src, dest).
-		Exec(context.Background(), nil)
+func (s *Shell) FilesCp(ctx context.Context, src string, dest string) error {
+	return s.Request("files/cp", src, dest).Exec(ctx, nil)
 }
 
 // FilesFlush flush a given path's data to disk
-func (s *Shell) FilesFlush(path string) (string, error) {
+func (s *Shell) FilesFlush(ctx context.Context, path string) (string, error) {
 	if len(path) == 0 {
 		path = "/"
 	}
 	out := &filesFlushOutput{}
 	if err := s.Request("files/flush", path).
-		Exec(context.Background(), out); err != nil {
+		Exec(ctx, out); err != nil {
 		return "", err
 	}
 
@@ -240,7 +239,7 @@ func (s *Shell) FilesFlush(path string) (string, error) {
 }
 
 // FilesLs list directories in the local mutable namespace
-func (s *Shell) FilesLs(path string, options ...FilesOpt) ([]*MfsLsEntry, error) {
+func (s *Shell) FilesLs(ctx context.Context, path string, options ...FilesOpt) ([]*MfsLsEntry, error) {
 	if len(path) == 0 {
 		path = "/"
 	}
@@ -252,14 +251,14 @@ func (s *Shell) FilesLs(path string, options ...FilesOpt) ([]*MfsLsEntry, error)
 			return nil, err
 		}
 	}
-	if err := rb.Exec(context.Background(), &out); err != nil {
+	if err := rb.Exec(ctx, &out); err != nil {
 		return nil, err
 	}
 	return out.Entries, nil
 }
 
 // FilesMkdir make directories
-func (s *Shell) FilesMkdir(path string, options ...FilesOpt) error {
+func (s *Shell) FilesMkdir(ctx context.Context, path string, options ...FilesOpt) error {
 	rb := s.Request("files/mkdir", path)
 	for _, opt := range options {
 		if err := opt(rb); err != nil {
@@ -267,17 +266,16 @@ func (s *Shell) FilesMkdir(path string, options ...FilesOpt) error {
 		}
 	}
 
-	return rb.Exec(context.Background(), nil)
+	return rb.Exec(ctx, nil)
 }
 
 // FilesMv move files
-func (s *Shell) FilesMv(src string, dest string) error {
-	return s.Request("files/mv", src, dest).
-		Exec(context.Background(), nil)
+func (s *Shell) FilesMv(ctx context.Context, src string, dest string) error {
+	return s.Request("files/mv", src, dest).Exec(ctx, nil)
 }
 
 // FilesRead read a file in a given MFS
-func (s *Shell) FilesRead(path string, options ...FilesOpt) (io.ReadCloser, error) {
+func (s *Shell) FilesRead(ctx context.Context, path string, options ...FilesOpt) (io.ReadCloser, error) {
 	rb := s.Request("files/read", path)
 	for _, opt := range options {
 		if err := opt(rb); err != nil {
@@ -285,7 +283,7 @@ func (s *Shell) FilesRead(path string, options ...FilesOpt) (io.ReadCloser, erro
 		}
 	}
 
-	resp, err := rb.Send(context.Background())
+	resp, err := rb.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -297,14 +295,14 @@ func (s *Shell) FilesRead(path string, options ...FilesOpt) (io.ReadCloser, erro
 }
 
 // FilesRm remove a file
-func (s *Shell) FilesRm(path string, force bool) error {
+func (s *Shell) FilesRm(ctx context.Context, path string, force bool) error {
 	return s.Request("files/rm", path).
 		Option("force", force).
-		Exec(context.Background(), nil)
+		Exec(ctx, nil)
 }
 
 // FilesStat display file status
-func (s *Shell) FilesStat(path string, options ...FilesOpt) (*FilesStatObject, error) {
+func (s *Shell) FilesStat(ctx context.Context, path string, options ...FilesOpt) (*FilesStatObject, error) {
 	out := &FilesStatObject{}
 
 	rb := s.Request("files/stat", path)
@@ -314,15 +312,14 @@ func (s *Shell) FilesStat(path string, options ...FilesOpt) (*FilesStatObject, e
 		}
 	}
 
-	if err := rb.Exec(context.Background(), out); err != nil {
+	if err := rb.Exec(ctx, out); err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
 // FilesWrite write to a mutable file in a given filesystem
-func (s *Shell) FilesWrite(path string, data io.Reader, options ...FilesOpt) error {
+func (s *Shell) FilesWrite(ctx context.Context, path string, data io.Reader, options ...FilesOpt) error {
 	fr := files.NewReaderFile(data)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
@@ -334,5 +331,5 @@ func (s *Shell) FilesWrite(path string, data io.Reader, options ...FilesOpt) err
 		}
 	}
 
-	return rb.Body(fileReader).Exec(context.Background(), nil)
+	return rb.Body(fileReader).Exec(ctx, nil)
 }
