@@ -78,7 +78,7 @@ func TestFilesLs(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	list, err := s.FilesLs("/testdata", FilesLs.Long(true), FilesLs.U(true))
+	list, err := s.FilesLs("/testdata", FilesLs.Stat(true))
 	is.Nil(err)
 
 	is.Equal(len(list), 2)
