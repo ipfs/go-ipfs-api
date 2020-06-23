@@ -16,6 +16,9 @@ func TestKeyGen(t *testing.T) {
 
 	is.Equal(key.Name, "testKey")
 	is.NotNil(key.Id)
+
+	_, err = s.KeyRm(context.Background(), "testKey")
+	is.Nil(err)
 }
 
 func TestKeyList(t *testing.T) {
@@ -44,4 +47,22 @@ func TestKeyRename(t *testing.T) {
 	is.Equal(out.Was, "test1")
 	is.Equal(out.Id, key.Id)
 	is.False(out.Overwrite)
+
+	_, err = s.KeyRm(context.Background(), "test2")
+	is.Nil(err)
+}
+
+func TestKeyRm(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	key, err := s.KeyGen(context.Background(), "testKey")
+	is.Nil(err)
+
+	keys, err := s.KeyRm(context.Background(), "testKey")
+	is.Nil(err)
+
+	is.Equal(len(keys), 1)
+	is.Equal(keys[0].Name, "testKey")
+	is.Equal(keys[0].Id, key.Id)
 }

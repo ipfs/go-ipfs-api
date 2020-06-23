@@ -72,3 +72,13 @@ func (s *Shell) KeyRename(ctx context.Context, old string, new string, force boo
 	}
 	return &out, nil
 }
+
+// KeyRm remove a keypair
+func (s *Shell) KeyRm(ctx context.Context, name string) ([]*Key, error) {
+	var out keyListOutput
+	if err := s.Request("key/rm", name).
+		Exec(ctx, &out); err != nil {
+		return nil, err
+	}
+	return out.Keys, nil
+}
