@@ -7,6 +7,13 @@ type Key struct {
 	Name string
 }
 
+type KeyRenameObject struct {
+	Id        string
+	Now       string
+	Overwrite bool
+	Was       string
+}
+
 type keyListOutput struct {
 	Keys []*Key
 }
@@ -53,4 +60,15 @@ func (s *Shell) KeyList(ctx context.Context) ([]*Key, error) {
 		return nil, err
 	}
 	return out.Keys, nil
+}
+
+// KeyRename Rename a keypair
+func (s *Shell) KeyRename(ctx context.Context, old string, new string, force bool) (*KeyRenameObject, error) {
+	var out KeyRenameObject
+	if err := s.Request("key/rename", old, new).
+		Option("force", force).
+		Exec(ctx, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }

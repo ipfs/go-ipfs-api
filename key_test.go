@@ -29,3 +29,19 @@ func TestKeyList(t *testing.T) {
 	is.Equal(keys[0].Name, "self")
 	is.NotNil(keys[0].Id)
 }
+
+func TestKeyRename(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	key, err := s.KeyGen(context.Background(), "test1")
+	is.Nil(err)
+
+	out, err := s.KeyRename(context.Background(), "test1", "test2", false)
+	is.Nil(err)
+
+	is.Equal(out.Now, "test2")
+	is.Equal(out.Was, "test1")
+	is.Equal(out.Id, key.Id)
+	is.False(out.Overwrite)
+}
