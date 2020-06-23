@@ -7,6 +7,17 @@ import (
 	"github.com/cheekybits/is"
 )
 
+func TestKeyGen(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	key, err := s.KeyGen(context.Background(), "testKey", KeyGen.Type("ed25519"), KeyGen.Size(2048))
+	is.Nil(err)
+
+	is.Equal(key.Name, "testKey")
+	is.NotNil(key.Id)
+}
+
 func TestKeyList(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)

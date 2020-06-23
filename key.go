@@ -11,6 +11,41 @@ type keyListOutput struct {
 	Keys []*Key
 }
 
+type KeyOpt func(*RequestBuilder) error
+type keyGen struct{}
+
+var KeyGen keyGen
+
+func (keyGen) Type(alg string) KeyOpt {
+	return func(rb *RequestBuilder) error {
+		rb.Option("type", alg)
+		return nil
+	}
+}
+
+func (keyGen) Size(size int) KeyOpt {
+	return func(rb *RequestBuilder) error {
+		rb.Option("size", size)
+		return nil
+	}
+}
+
+// KeyGen Create a new keypair
+func (s *Shell) KeyGen(ctx context.Context, name string, options ...KeyOpt) (*Key, error) {
+	rb := s.Request("key/gen", name)
+	for _, opt := range options {
+		if err := opt(rb); err != nil {
+			return nil, err
+		}
+	}
+
+	var out Key
+	if err := rb.Exec(ctx, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // KeyList List all local keypairs
 func (s *Shell) KeyList(ctx context.Context) ([]*Key, error) {
 	var out keyListOutput
