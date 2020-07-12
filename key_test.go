@@ -15,7 +15,7 @@ func TestKeyGen(t *testing.T) {
 		_, err := s.KeyRm(context.Background(), "testKey1")
 		is.Nil(err)
 	}()
-	key1, err := s.KeyGen(context.Background(), "testKey1", KeyGen.Type("ed25519"), KeyGen.Size(2048))
+	key1, err := s.KeyGen(context.Background(), "testKey1", KeyGen.Type("ed25519"))
 	is.Nil(err)
 	is.Equal(key1.Name, "testKey1")
 	is.NotNil(key1.Id)
