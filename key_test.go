@@ -46,10 +46,6 @@ func TestKeyGen(t *testing.T) {
 	is.Nil(err)
 	is.Equal(key4.Name, "testKey4")
 	is.NotNil(key4.Id)
-
-	_, err = s.KeyGen(context.Background(), "testKey5", KeyGen.Type("rsa"), KeyGen.Size(1024))
-	is.NotNil(err)
-	is.Equal(err.Error(), "key/gen: rsa keys must be >= 2048 bits to be useful")
 }
 
 func TestKeyList(t *testing.T) {
