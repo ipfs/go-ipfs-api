@@ -387,7 +387,7 @@ func TestDagPut(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "json", "cbor")
+	c, err := s.DagPut(`{"x": "abc","y":"def"}`, "dag-json", "dag-cbor")
 	is.Nil(err)
 	is.Equal(c, "bafyreidrm3r2k6vlxqp2fk47sboeycf7apddib47w7cyagrajtpaxxl2pi")
 }
@@ -398,7 +398,7 @@ func TestDagPutWithOpts(t *testing.T) {
 
 	c, err := s.DagPutWithOpts(`{"x": "abc","y":"def"}`, options.Dag.Pin("true"))
 	is.Nil(err)
-	is.Equal(c, "bafyreidrm3r2k6vlxqp2fk47sboeycf7apddib47w7cyagrajtpaxxl2pi")
+	is.Equal(c, "bafireidrm3r2k6vlxqp2fk47sboeycf7apddib47w7cyagrajtpaxxl2pi")
 }
 
 func TestStatsBW(t *testing.T) {
