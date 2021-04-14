@@ -217,10 +217,12 @@ func (s *Shell) Unpin(path string) error {
 		Exec(context.Background(), nil)
 }
 
+type PinType string
+
 const (
-	DirectPin    = "direct"
-	RecursivePin = "recursive"
-	IndirectPin  = "indirect"
+	DirectPin    PinType = "direct"
+	RecursivePin PinType = "recursive"
+	IndirectPin  PinType = "indirect"
 )
 
 type PinInfo struct {
@@ -235,6 +237,12 @@ type PinInfo struct {
 func (s *Shell) Pins() (map[string]PinInfo, error) {
 	var raw struct{ Keys map[string]PinInfo }
 	return raw.Keys, s.Request("pin/ls").Exec(context.Background(), &raw)
+}
+
+// Pins returns a map of the pins of specified type (DirectPin, RecursivePin, or IndirectPin)
+func (s *Shell) PinsOfType(pinType PinType) (map[string]PinInfo, error) {
+	var raw struct{ Keys map[string]PinInfo }
+	return raw.Keys, s.Request("pin/ls").Option("type", pinType).Exec(context.Background(), &raw)
 }
 
 // PinStreamInfo is the output type for PinsStream
