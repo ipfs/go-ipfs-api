@@ -240,9 +240,9 @@ func (s *Shell) Pins() (map[string]PinInfo, error) {
 }
 
 // Pins returns a map of the pins of specified type (DirectPin, RecursivePin, or IndirectPin)
-func (s *Shell) PinsOfType(pinType PinType) (map[string]PinInfo, error) {
+func (s *Shell) PinsOfType(ctx context.Context, pinType PinType) (map[string]PinInfo, error) {
 	var raw struct{ Keys map[string]PinInfo }
-	return raw.Keys, s.Request("pin/ls").Option("type", pinType).Exec(context.Background(), &raw)
+	return raw.Keys, s.Request("pin/ls").Option("type", pinType).Exec(ctx, &raw)
 }
 
 // PinStreamInfo is the output type for PinsStream

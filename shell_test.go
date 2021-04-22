@@ -247,7 +247,7 @@ func TestPinsOfType(t *testing.T) {
 	h, err := s.Add(bytes.NewBufferString("go-ipfs-api pins test 9F3D1F30-D12A-4024-9477-8F0C8E4B3A63"))
 	is.Nil(err)
 
-	pins, err := s.PinsOfType(RecursivePin)
+	pins, err := s.PinsOfType(context.Background(), RecursivePin)
 	is.Nil(err)
 
 	_, ok := pins[h]
