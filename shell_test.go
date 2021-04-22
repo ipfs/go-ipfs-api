@@ -239,6 +239,40 @@ func TestPins(t *testing.T) {
 	is.Equal(info.Type, RecursivePin)
 }
 
+func TestPinsOfType(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	// Add a thing, which pins it by default
+	h, err := s.Add(bytes.NewBufferString("go-ipfs-api pins test 9F3D1F30-D12A-4024-9477-8F0C8E4B3A63"))
+	is.Nil(err)
+
+	pins, err := s.PinsOfType(context.Background(), RecursivePin)
+	is.Nil(err)
+
+	_, ok := pins[h]
+	is.True(ok)
+
+	err = s.Unpin(h)
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	_, ok = pins[h]
+	is.False(ok)
+
+	err = s.Pin(h)
+	is.Nil(err)
+
+	pins, err = s.Pins()
+	is.Nil(err)
+
+	info, ok := pins[h]
+	is.True(ok)
+	is.Equal(info.Type, RecursivePin)
+}
+
 func TestPinsStream(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
