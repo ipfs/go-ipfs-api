@@ -19,7 +19,7 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr/net"
 	tar "github.com/whyrusleeping/tar-utils"
 
 	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
@@ -147,7 +147,7 @@ type IdOutput struct {
 //   return information about the local peer.
 func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if len(peer) > 1 {
-		return nil, fmt.Errorf("Too many peer arguments")
+		return nil, fmt.Errorf("too many peer arguments")
 	}
 
 	var out IdOutput
