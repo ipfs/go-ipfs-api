@@ -17,17 +17,20 @@ func TestMain(m *testing.M) {
 	for _, f := range files {
 		file, err := os.Open(fmt.Sprintf("./testdata/%s", f))
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to open test data file: %v\n", err)
 			os.Exit(1)
 		}
 
 		err = s.FilesWrite(context.Background(), fmt.Sprintf("/testdata/%s", f), file, FilesWrite.Parents(true), FilesWrite.Create(true))
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to write test data, not running tests: %v\n", err)
 			os.Exit(1)
 		}
 	}
 
 	exitVal := m.Run()
 	if err := s.FilesRm(context.Background(), "/testdata", true); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to remove test data: %v\n", err)
 		os.Exit(1)
 	}
 	os.Exit(exitVal)
@@ -115,7 +118,7 @@ func TestFilesMv(t *testing.T) {
 	is.Nil(err)
 	is.Equal(stat.Hash, "QmfZt7xPekp7npSM6DHDUnFseAiNZQs7wq6muH9o99RsCB")
 
-	stat, err = s.FilesStat(context.Background(), "/testdata/readme")
+	_, err = s.FilesStat(context.Background(), "/testdata/readme")
 	is.NotNil(err)
 
 	err = s.FilesMv(context.Background(), "/testdata/readme2", "/testdata/readme")
@@ -184,6 +187,8 @@ func TestFilesWrite(t *testing.T) {
 	is.Equal(string(resBytes), "ipfs")
 
 	file, err = ioutil.ReadFile("./testdata/ping")
+	is.Nil(err)
+
 	err = s.FilesWrite(context.Background(), "/testdata/ping", bytes.NewBuffer(file), FilesWrite.Offset(0), FilesWrite.Count(2), FilesWrite.Truncate(true))
 	is.Nil(err)
 

@@ -6,8 +6,12 @@ import (
 	"time"
 )
 
-var examplesHashForIPNS = "/ipfs/Qmbu7x6gJbsKDcseQv66pSbUcAA3Au6f7MfTYVXwvBxN2K"
-var testKey = "self" // feel free to change to whatever key you have locally
+var (
+	//lint:ignore U1000 used only by skipped tests at present
+	examplesHashForIPNS = "/ipfs/Qmbu7x6gJbsKDcseQv66pSbUcAA3Au6f7MfTYVXwvBxN2K"
+	//lint:ignore U1000 used only by skipped tests at present
+	testKey = "self" // feel free to change to whatever key you have locally
+)
 
 func TestPublishDetailsWithKey(t *testing.T) {
 	t.Skip()
