@@ -19,7 +19,7 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr/net"
 	tar "github.com/whyrusleeping/tar-utils"
 
 	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
@@ -147,7 +147,7 @@ type IdOutput struct {
 //   return information about the local peer.
 func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if len(peer) > 1 {
-		return nil, fmt.Errorf("Too many peer arguments")
+		return nil, fmt.Errorf("too many peer arguments")
 	}
 
 	var out IdOutput
@@ -217,10 +217,12 @@ func (s *Shell) Unpin(path string) error {
 		Exec(context.Background(), nil)
 }
 
+type PinType string
+
 const (
-	DirectPin    = "direct"
-	RecursivePin = "recursive"
-	IndirectPin  = "indirect"
+	DirectPin    PinType = "direct"
+	RecursivePin PinType = "recursive"
+	IndirectPin  PinType = "indirect"
 )
 
 type PinInfo struct {
@@ -235,6 +237,12 @@ type PinInfo struct {
 func (s *Shell) Pins() (map[string]PinInfo, error) {
 	var raw struct{ Keys map[string]PinInfo }
 	return raw.Keys, s.Request("pin/ls").Exec(context.Background(), &raw)
+}
+
+// Pins returns a map of the pins of specified type (DirectPin, RecursivePin, or IndirectPin)
+func (s *Shell) PinsOfType(ctx context.Context, pinType PinType) (map[string]PinInfo, error) {
+	var raw struct{ Keys map[string]PinInfo }
+	return raw.Keys, s.Request("pin/ls").Option("type", pinType).Exec(ctx, &raw)
 }
 
 // PinStreamInfo is the output type for PinsStream
