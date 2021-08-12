@@ -14,8 +14,8 @@ type DagPutOption func(opts *DagPutSettings) error
 // DagPutOptions applies the given options to a DagPutSettings instance.
 func DagPutOptions(opts ...DagPutOption) (*DagPutSettings, error) {
 	options := &DagPutSettings{
-		InputEnc: "json",
-		Kind:     "cbor",
+		InputEnc: "dag-json",
+		Kind:     "dag-cbor",
 		Pin:      "false",
 		Hash:     "sha2-256",
 	}
