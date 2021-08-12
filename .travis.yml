@@ -21,7 +21,7 @@ before_install:
   - (cd /tmp && go install github.com/ipfs/go-ipfs/cmd/ipfs@fd6676f4afe43324629ab1a618ba1169fe2c3c2a)
   - mkdir /tmp/ipfs && chmod 0777 /tmp/ipfs
   - ipfs init
-  - ipfs daemon --enable-namesys-pubsub
+  - (ipfs daemon --enable-namesys-pubsub &)
 install:
   - go mod download
 
