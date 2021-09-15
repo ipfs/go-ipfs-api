@@ -1,4 +1,4 @@
-go 1.13
+go 1.16
 
 module github.com/ipfs/go-ipfs-api
 
