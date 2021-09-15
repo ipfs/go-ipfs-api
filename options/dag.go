@@ -2,10 +2,10 @@ package options
 
 // DagPutSettings is a set of DagPut options.
 type DagPutSettings struct {
-	InputEnc string
-	Kind     string
-	Pin      string
-	Hash     string
+	InputCodec string
+	StoreCodec string
+	Pin        string
+	Hash       string
 }
 
 // DagPutOption is a single DagPut option.
@@ -14,10 +14,10 @@ type DagPutOption func(opts *DagPutSettings) error
 // DagPutOptions applies the given options to a DagPutSettings instance.
 func DagPutOptions(opts ...DagPutOption) (*DagPutSettings, error) {
 	options := &DagPutSettings{
-		InputEnc: "dag-json",
-		Kind:     "dag-cbor",
-		Pin:      "false",
-		Hash:     "sha2-256",
+		InputCodec: "dag-json",
+		StoreCodec: "dag-cbor",
+		Pin:        "false",
+		Hash:       "sha2-256",
 	}
 
 	for _, opt := range opts {
@@ -42,20 +42,20 @@ func (dagOpts) Pin(pin string) DagPutOption {
 	}
 }
 
-// InputEnc is an option for Dag.Put which specifies the input encoding of the
-// data. Default is "json", most formats/codecs support "raw".
-func (dagOpts) InputEnc(enc string) DagPutOption {
+// InputCodec is an option for Dag.Put which specifies the input encoding of the
+// data. Default is "dag-json".
+func (dagOpts) InputCodec(codec string) DagPutOption {
 	return func(opts *DagPutSettings) error {
-		opts.InputEnc = enc
+		opts.InputCodec = codec
 		return nil
 	}
 }
 
-// Kind is an option for Dag.Put which specifies the format that the dag
-// will be added as. Default is "cbor".
-func (dagOpts) Kind(kind string) DagPutOption {
+// StoreCodec is an option for Dag.Put which specifies the codec that the stored
+// object will be encoded with. Default is "dag-cbor".
+func (dagOpts) StoreCodec(codec string) DagPutOption {
 	return func(opts *DagPutSettings) error {
-		opts.Kind = kind
+		opts.StoreCodec = codec
 		return nil
 	}
 }
