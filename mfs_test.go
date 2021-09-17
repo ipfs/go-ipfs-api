@@ -28,6 +28,18 @@ func TestMain(m *testing.M) {
 		}
 	}
 
+	stat, err := s.FilesStat(context.Background(), "/testdata")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to stat test data, not running tests: %v\n", err)
+		os.Exit(1)
+	}
+
+	expectedTestdataCIDString := "QmfZtacPc5nch976ZsiBw6nhLmTzy5JjW2pzZg8j7GjqWq"
+	if stat.Hash != expectedTestdataCIDString {
+		fmt.Fprintf(os.Stderr, "CID of /testdata is %s which does not match the expected %s, not running tests\n", stat.Hash, expectedTestdataCIDString)
+		os.Exit(1)
+	}
+
 	exitVal := m.Run()
 	if err := s.FilesRm(context.Background(), "/testdata", true); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to remove test data: %v\n", err)
