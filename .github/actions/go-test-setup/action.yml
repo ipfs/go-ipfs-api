@@ -1,0 +1,15 @@
+name: installipfs
+description: install go-ipfs
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install go-ipfs
+      shell: bash
+      run: (cd /tmp && go install github.com/ipfs/go-ipfs/cmd/ipfs@master)
+    - name: Initialize go-ipfs
+      shell: bash
+      run: (ipfs init)
+    - name: Run go-ipfs
+      shell: bash
+      run: (ipfs daemon --enable-pubsub-experiment &)
