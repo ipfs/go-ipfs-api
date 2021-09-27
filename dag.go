@@ -15,8 +15,8 @@ func (s *Shell) DagGet(ref string, out interface{}) error {
 	return s.Request("dag/get", ref).Exec(context.Background(), out)
 }
 
-func (s *Shell) DagPut(data interface{}, ienc, kind string) (string, error) {
-	return s.DagPutWithOpts(data, options.Dag.InputEnc(ienc), options.Dag.Kind(kind))
+func (s *Shell) DagPut(data interface{}, inputCodec, storeCodec string) (string, error) {
+	return s.DagPutWithOpts(data, options.Dag.InputCodec(inputCodec), options.Dag.StoreCodec(storeCodec))
 }
 
 func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (string, error) {
@@ -49,8 +49,8 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 
 	return out.Cid.Target, s.
 		Request("dag/put").
-		Option("input-enc", cfg.InputEnc).
-		Option("format", cfg.Kind).
+		Option("input-codec", cfg.InputCodec).
+		Option("store-codec", cfg.StoreCodec).
 		Option("pin", cfg.Pin).
 		Option("hash", cfg.Hash).
 		Body(fileReader).
