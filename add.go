@@ -114,7 +114,7 @@ func (s *Shell) AddDir(dir string) (string, error) {
 		Body(reader).
 		Send(context.Background())
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	defer resp.Close()

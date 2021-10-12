@@ -126,6 +126,14 @@ func TestAddDir(t *testing.T) {
 	is.Equal(cid, "QmS4ustL54uo8FzR9455qaxZwuMiUhyvMcX9Ba8nUH4uVv")
 }
 
+func TestAddDirOffline(t *testing.T) {
+	is := is.New(t)
+	s := NewShell("0.0.0.0:1234") // connect to an invalid address
+
+	_, err := s.AddDir("./testdata")
+	is.Err(err)
+}
+
 func TestLocalShell(t *testing.T) {
 	is := is.New(t)
 	s := NewLocalShell()
