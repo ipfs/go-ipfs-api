@@ -20,6 +20,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
+	mbase "github.com/multiformats/go-multibase"
 	tar "github.com/whyrusleeping/tar-utils"
 
 	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
@@ -516,7 +517,8 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 	// connect
-	resp, err := s.Request("pubsub/sub", topic).Send(context.Background())
+	encoder, _ := mbase.EncoderByName("base64url")
+	resp, err := s.Request("pubsub/sub", encoder.Encode([]byte(topic))).Send(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -528,7 +530,14 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 }
 
 func (s *Shell) PubSubPublish(topic, data string) (err error) {
-	resp, err := s.Request("pubsub/pub", topic, data).Send(context.Background())
+
+	fr := files.NewReaderFile(bytes.NewReader([]byte(data)))
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	encoder, _ := mbase.EncoderByName("base64url")
+	resp, err := s.Request("pubsub/pub", encoder.Encode([]byte(topic))).
+		Body(fileReader).Send(context.Background())
 	if err != nil {
 		return err
 	}

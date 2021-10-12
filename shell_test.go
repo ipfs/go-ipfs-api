@@ -361,7 +361,9 @@ func TestPubSub(t *testing.T) {
 	s := NewShell(shellUrl)
 
 	var (
-		topic = "test"
+		topic    = fmt.Sprintf("test\n topic\r\t with unsafe bytes")
+		payload1 = fmt.Sprintf("Hello\r\nWorld\t!")
+		payload2 = fmt.Sprintf("Hallo\r\nWelt\t!!11oneonę")
 
 		sub *PubSubSubscription
 		err error
@@ -376,7 +378,7 @@ func TestPubSub(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	t.Log("publishing...")
-	is.Nil(s.PubSubPublish(topic, "Hello World!"))
+	is.Nil(s.PubSubPublish(topic, payload1))
 	t.Log("pub: done")
 
 	t.Log("next()...")
@@ -385,23 +387,23 @@ func TestPubSub(t *testing.T) {
 
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data, "Hello World!")
+	is.Equal(r.Data, payload1)
 
 	sub2, err := s.PubSubSubscribe(topic)
 	is.Nil(err)
 	is.NotNil(sub2)
 
-	is.Nil(s.PubSubPublish(topic, "Hallo Welt!"))
+	is.Nil(s.PubSubPublish(topic, payload2))
 
 	r, err = sub2.Next()
 	is.Nil(err)
 	is.NotNil(r)
-	is.Equal(r.Data, "Hallo Welt!")
+	is.Equal(r.Data, payload2)
 
 	r, err = sub.Next()
 	is.NotNil(r)
 	is.Nil(err)
-	is.Equal(r.Data, "Hallo Welt!")
+	is.Equal(r.Data, payload2)
 
 	is.Nil(sub.Cancel())
 }
