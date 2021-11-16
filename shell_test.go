@@ -361,9 +361,9 @@ func TestPubSub(t *testing.T) {
 	s := NewShell(shellUrl)
 
 	var (
-		topic    = fmt.Sprintf("test\n topic\r\t with unsafe bytes")
-		payload1 = fmt.Sprintf("Hello\r\nWorld\t!")
-		payload2 = fmt.Sprintf("Hallo\r\nWelt\t!!11oneonę")
+		topic    = "test\n topic\r\t with unsafe bytes"
+		payload1 = "Hello\r\nWorld\t!"
+		payload2 = "Hallo\r\nWelt\t!!11oneonę"
 
 		sub *PubSubSubscription
 		err error
