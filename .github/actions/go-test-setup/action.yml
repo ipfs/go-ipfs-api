@@ -9,7 +9,7 @@ runs:
       run: |
         cd /tmp    && git clone https://github.com/coryschwartz/go-ipfs.git
         cd go-ipfs && git checkout 153697d524f449ee9bec97245b0fcd7ebc2e8170
-        make install
+        go install ./cmd/ipfs
     - name: Initialize go-ipfs
       shell: bash
       run: (ipfs init)
