@@ -1,12 +1,12 @@
 name: installipfs
-description: install go-ipfs
+description: install kubo
 
 runs:
   using: "composite"
   steps:
-    - name: Install go-ipfs
+    - name: Install kubo
       shell: bash
-      run: (cd /tmp && go install github.com/ipfs/go-ipfs/cmd/ipfs@master)
+      run: (cd /tmp && go install github.com/ipfs/kubo/cmd/ipfs@master)
     - uses: ipfs/start-ipfs-daemon-action@v1
       with:
         args: --init --enable-pubsub-experiment
