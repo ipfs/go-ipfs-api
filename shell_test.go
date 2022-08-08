@@ -552,3 +552,18 @@ func TestRefs(t *testing.T) {
 	sort.Strings(actual)
 	is.Equal(expected, actual)
 }
+
+func TestSwarmPeeringLs(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	_, err := s.SwarmPeeringLs(context.Background())
+	is.Nil(err)
+}
+
+func TestSwarmPeeringAdd(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+	addr := fmt.Sprintf("/ip4/10.10.10.10/tcp/4001/p2p/%s", examplesHash)
+	_, err := s.SwarmPeeringAdd(context.Background(), addr)
+	is.Nil(err)
+}

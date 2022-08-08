@@ -611,3 +611,26 @@ func (s *Shell) SwarmConnect(ctx context.Context, addr ...string) error {
 		Exec(ctx, &conn)
 	return err
 }
+
+type PeeringLsOutput struct {
+	Peers []PeerInfo
+}
+
+// SwarmPeeringLs lists peers registered in the peering subsystem
+func (s *Shell) SwarmPeeringLs(ctx context.Context) (*PeeringLsOutput, error) {
+	var output *PeeringLsOutput
+	err := s.Request("swarm/peering/ls").Arguments().Exec(ctx, &output)
+	return output, err
+}
+
+type PeerStatus struct {
+	ID     string
+	Status string
+}
+
+// SwarmPeeringAdd adds a peer into the peering subsysytem.
+func (s *Shell) SwarmPeeringAdd(ctx context.Context, addr string) (*PeerStatus, error) {
+	var output *PeerStatus
+	err := s.Request("swarm/peering/add").Arguments(addr).Exec(ctx, &output)
+	return output, err
+}
