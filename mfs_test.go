@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -144,7 +144,7 @@ func TestFilesRead(t *testing.T) {
 	reader, err := s.FilesRead(context.Background(), "/testdata/readme", FilesRead.Offset(0), FilesRead.Count(5))
 	is.Nil(err)
 
-	resBytes, err := ioutil.ReadAll(reader)
+	resBytes, err := io.ReadAll(reader)
 	is.Nil(err)
 	is.Equal(string(resBytes), "Hello")
 }
@@ -153,7 +153,7 @@ func TestFilesRm(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	file, _ := ioutil.ReadFile("./testdata/ping")
+	file, _ := os.ReadFile("./testdata/ping")
 	err := s.FilesWrite(context.Background(), "/testdata/dir1/ping", bytes.NewBuffer(file), FilesWrite.Parents(true), FilesWrite.Create(true))
 	is.Nil(err)
 
@@ -185,7 +185,7 @@ func TestFilesWrite(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
 
-	file, err := ioutil.ReadFile("./testdata/ping")
+	file, err := os.ReadFile("./testdata/ping")
 	is.Nil(err)
 
 	err = s.FilesWrite(context.Background(), "/testdata/ping", bytes.NewBuffer(file), FilesWrite.Create(true), FilesWrite.RawLeaves(true), FilesWrite.CidVersion(1), FilesWrite.Hash("sha3-256"))
@@ -194,11 +194,11 @@ func TestFilesWrite(t *testing.T) {
 	reader, err := s.FilesRead(context.Background(), "/testdata/ping")
 	is.Nil(err)
 
-	resBytes, err := ioutil.ReadAll(reader)
+	resBytes, err := io.ReadAll(reader)
 	is.Nil(err)
 	is.Equal(string(resBytes), "ipfs")
 
-	file, err = ioutil.ReadFile("./testdata/ping")
+	file, err = os.ReadFile("./testdata/ping")
 	is.Nil(err)
 
 	err = s.FilesWrite(context.Background(), "/testdata/ping", bytes.NewBuffer(file), FilesWrite.Offset(0), FilesWrite.Count(2), FilesWrite.Truncate(true))
@@ -207,7 +207,7 @@ func TestFilesWrite(t *testing.T) {
 	reader, err = s.FilesRead(context.Background(), "/testdata/ping")
 	is.Nil(err)
 
-	resBytes, err = ioutil.ReadAll(reader)
+	resBytes, err = io.ReadAll(reader)
 	is.Nil(err)
 	is.Equal(string(resBytes), "ip")
 }

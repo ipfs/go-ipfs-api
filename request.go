@@ -147,7 +147,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		case resp.StatusCode == http.StatusNotFound:
 			e.Message = "command not found"
 		case contentType == "text/plain":
-			out, err := ioutil.ReadAll(resp.Body)
+			out, err := io.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: warning! response (%d) read error: %s\n", resp.StatusCode, err)
 			}
@@ -158,7 +158,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 			}
 		default:
 			fmt.Fprintf(os.Stderr, "ipfs-shell: warning! unhandled response (%d) encoding: %s", resp.StatusCode, contentType)
-			out, err := ioutil.ReadAll(resp.Body)
+			out, err := io.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "ipfs-shell: response (%d) read error: %s\n", resp.StatusCode, err)
 			}

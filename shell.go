@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	gohttp "net/http"
 	"os"
@@ -55,7 +54,7 @@ func NewLocalShell() *Shell {
 		return nil
 	}
 
-	api, err := ioutil.ReadFile(apiFile)
+	api, err := os.ReadFile(apiFile)
 	if err != nil {
 		return nil
 	}
@@ -145,7 +144,8 @@ type IdOutput struct {
 // ID gets information about a given peer.  Arguments:
 //
 // peer: peer.ID of the node to look up.  If no peer is specified,
-//   return information about the local peer.
+//
+//	return information about the local peer.
 func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if len(peer) > 1 {
 		return nil, fmt.Errorf("too many peer arguments")
@@ -460,7 +460,7 @@ func (s *Shell) BlockGet(path string) ([]byte, error) {
 		return nil, resp.Error
 	}
 
-	return ioutil.ReadAll(resp.Output)
+	return io.ReadAll(resp.Output)
 }
 
 func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string, error) {
