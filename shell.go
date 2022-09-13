@@ -1,4 +1,4 @@
-// package shell implements a remote API interface for a running ipfs daemon
+// Package shell implements a remote API interface for a running ipfs daemon
 package shell
 
 import (
@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	gohttp "net/http"
 	"os"
@@ -17,13 +16,12 @@ import (
 	"time"
 
 	files "github.com/ipfs/go-ipfs-files"
-	homedir "github.com/mitchellh/go-homedir"
+	p2pmetrics "github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	mbase "github.com/multiformats/go-multibase"
-	tar "github.com/whyrusleeping/tar-utils"
-
-	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
+	"github.com/whyrusleeping/tar-utils"
 )
 
 const (
@@ -55,7 +53,7 @@ func NewLocalShell() *Shell {
 		return nil
 	}
 
-	api, err := ioutil.ReadFile(apiFile)
+	api, err := os.ReadFile(apiFile)
 	if err != nil {
 		return nil
 	}
@@ -145,7 +143,8 @@ type IdOutput struct {
 // ID gets information about a given peer.  Arguments:
 //
 // peer: peer.ID of the node to look up.  If no peer is specified,
-//   return information about the local peer.
+//
+//	return information about the local peer.
 func (s *Shell) ID(peer ...string) (*IdOutput, error) {
 	if len(peer) > 1 {
 		return nil, fmt.Errorf("too many peer arguments")
@@ -240,7 +239,7 @@ func (s *Shell) Pins() (map[string]PinInfo, error) {
 	return raw.Keys, s.Request("pin/ls").Exec(context.Background(), &raw)
 }
 
-// Pins returns a map of the pins of specified type (DirectPin, RecursivePin, or IndirectPin)
+// PinsOfType returns a map of the pins of specified type (DirectPin, RecursivePin, or IndirectPin)
 func (s *Shell) PinsOfType(ctx context.Context, pinType PinType) (map[string]PinInfo, error) {
 	var raw struct{ Keys map[string]PinInfo }
 	return raw.Keys, s.Request("pin/ls").Option("type", pinType).Exec(ctx, &raw)
@@ -419,7 +418,7 @@ func (s *Shell) ResolvePath(path string) (string, error) {
 	return strings.TrimPrefix(out.Path, "/ipfs/"), nil
 }
 
-// returns ipfs version and commit sha
+// Version returns ipfs version and commit sha
 func (s *Shell) Version() (string, string, error) {
 	ver := struct {
 		Version string
@@ -460,7 +459,7 @@ func (s *Shell) BlockGet(path string) ([]byte, error) {
 		return nil, resp.Error
 	}
 
-	return ioutil.ReadAll(resp.Output)
+	return io.ReadAll(resp.Output)
 }
 
 func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string, error) {
@@ -568,7 +567,7 @@ func (s *Shell) ObjectStat(key string) (*ObjectStats, error) {
 	return &stat, nil
 }
 
-// ObjectStat gets stats for the DAG object named by key. It returns
+// StatsBW gets stats for the DAG object named by key. It returns
 // the stats of the requested Object or an error.
 func (s *Shell) StatsBW(ctx context.Context) (*p2pmetrics.Stats, error) {
 	v := &p2pmetrics.Stats{}

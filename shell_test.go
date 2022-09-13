@@ -7,7 +7,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -86,7 +85,7 @@ func TestAddOnlyHash(t *testing.T) {
 	is.Nil(err)
 
 	_, err = s.Cat(mhash)
-	is.Err(err) // we expect an http timeout error because `cat` won't find the `rand` string
+	is.Err(err) // we expect a http timeout error because `cat` won't find the `rand` string
 }
 
 func TestAddNoPin(t *testing.T) {
@@ -465,7 +464,7 @@ func TestNewShellWithUnixSocket(t *testing.T) {
 	is := is.New(t)
 
 	// setup uds temporary dir
-	path, err := ioutil.TempDir("", "uds-test")
+	path, err := os.MkdirTemp("", "uds-test")
 	is.Nil(err)
 
 	defer os.RemoveAll(path)

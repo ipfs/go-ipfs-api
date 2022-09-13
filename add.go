@@ -95,7 +95,7 @@ func (s *Shell) AddLink(target string) (string, error) {
 	return out.Hash, s.Request("add").Body(reader).Exec(context.Background(), &out)
 }
 
-// AddDir adds a directory recursively with all of the files under it
+// AddDir adds a directory recursively with all the files under it
 func (s *Shell) AddDir(dir string) (string, error) {
 	stat, err := os.Lstat(dir)
 	if err != nil {

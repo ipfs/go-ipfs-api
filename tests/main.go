@@ -6,8 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/ipfs/go-ipfs-api"
-
+	shell "github.com/ipfs/go-ipfs-api"
 	u "github.com/ipfs/go-ipfs-util"
 )
 
