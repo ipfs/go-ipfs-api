@@ -210,4 +210,7 @@ func TestFilesWrite(t *testing.T) {
 	resBytes, err = io.ReadAll(reader)
 	is.Nil(err)
 	is.Equal(string(resBytes), "ip")
+
+	err = s.FilesRm(context.Background(), "/testdata/ping", true)
+	is.Nil(err)
 }
