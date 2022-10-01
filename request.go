@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -70,7 +69,7 @@ type Response struct {
 func (r *Response) Close() error {
 	if r.Output != nil {
 		// always drain output (response body)
-		_, err1 := io.Copy(ioutil.Discard, r.Output)
+		_, err1 := io.Copy(io.Discard, r.Output)
 		err2 := r.Output.Close()
 		if err1 != nil {
 			return err1
@@ -168,7 +167,7 @@ func (r *Request) Send(c *http.Client) (*Response, error) {
 		nresp.Output = nil
 
 		// drain body and close
-		io.Copy(ioutil.Discard, resp.Body)
+		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 	}
 
