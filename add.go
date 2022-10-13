@@ -61,6 +61,7 @@ func CidVersion(version int) AddOpts {
 	}
 }
 
+// Add adds a file to ipfs pinning it with the given options
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 	fr := files.NewReaderFile(r)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
