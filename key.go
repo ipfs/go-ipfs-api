@@ -1,6 +1,11 @@
 package shell
 
-import "context"
+import (
+	"context"
+	"io"
+
+	files "github.com/ipfs/go-ipfs-files"
+)
 
 type Key struct {
 	Id   string
@@ -81,4 +86,20 @@ func (s *Shell) KeyRm(ctx context.Context, name string) ([]*Key, error) {
 		return nil, err
 	}
 	return out.Keys, nil
+}
+
+// KeyImport imports key as file
+func (s *Shell) KeyImport(ctx context.Context, name string, key io.Reader, options ...KeyOpt) error {
+	fr := files.NewReaderFile(key)
+	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
+	fileReader := files.NewMultiFileReader(slf, true)
+
+	rb := s.Request("key/import", name)
+	for _, opt := range options {
+		if err := opt(rb); err != nil {
+			return err
+		}
+	}
+
+	return rb.Body(fileReader).Exec(ctx, nil)
 }
