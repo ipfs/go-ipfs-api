@@ -22,7 +22,7 @@ import (
 	mbase "github.com/multiformats/go-multibase"
 	tar "github.com/whyrusleeping/tar-utils"
 
-	p2pmetrics "github.com/libp2p/go-libp2p-core/metrics"
+	p2pmetrics "github.com/libp2p/go-libp2p/core/metrics"
 )
 
 const (
