@@ -2,6 +2,7 @@ package shell
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/cheekybits/is"
@@ -113,4 +114,20 @@ func TestKeyRm(t *testing.T) {
 	_, err = s.KeyRm(context.Background(), "testKey")
 	is.NotNil(err)
 	is.Equal(err.Error(), "key/rm: no key named testKey was found")
+}
+
+func TestKeyImport(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	// Key generated as per: https://github.com/ipfs/kubo/blob/c9d51bbe0133968858aa9991b7f69ec269126599/test/sharness/t0165-keystore-data/README.md
+	f, err := os.Open("./tests/key_test.pem")
+	is.Nil(err)
+	defer f.Close()
+
+	err = s.KeyImport(context.Background(), "testImportKey", f, KeyImportGen.Format("pem-pkcs8-cleartext"))
+	is.Nil(err)
+
+	_, err = s.KeyRm(context.Background(), "testImportKey")
+	is.Nil(err)
 }
