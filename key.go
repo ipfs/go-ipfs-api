@@ -88,8 +88,34 @@ func (s *Shell) KeyRm(ctx context.Context, name string) ([]*Key, error) {
 	return out.Keys, nil
 }
 
-// KeyImport imports key as file
-func (s *Shell) KeyImport(ctx context.Context, name string, key io.Reader, options ...KeyOpt) error {
+type KeyImportOpt func(*RequestBuilder) error
+type keyImportOpt struct{}
+
+var KeyImportGen keyImportOpt
+
+func (keyImportOpt) IpnsBase(enc string) KeyImportOpt {
+	return func(rb *RequestBuilder) error {
+		rb.Option("ipns-base", enc)
+		return nil
+	}
+}
+
+func (keyImportOpt) Format(format string) KeyImportOpt {
+	return func(rb *RequestBuilder) error {
+		rb.Option("format", format)
+		return nil
+	}
+}
+
+func (keyImportOpt) AllowAnyKeyType(allow bool) KeyImportOpt {
+	return func(rb *RequestBuilder) error {
+		rb.Option("allow-any-key-type", allow)
+		return nil
+	}
+}
+
+// KeyImport imports key as file.
+func (s *Shell) KeyImport(ctx context.Context, name string, key io.Reader, options ...KeyImportOpt) error {
 	fr := files.NewReaderFile(key)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
 	fileReader := files.NewMultiFileReader(slf, true)
