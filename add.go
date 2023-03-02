@@ -2,8 +2,6 @@ package shell
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -97,7 +95,7 @@ func (s *Shell) AddLink(target string) (string, error) {
 }
 
 // AddDir adds a directory recursively with all of the files under it
-func (s *Shell) AddDir(dir string) (string, error) {
+func (s *Shell) AddDir(dir string, options ...AddOpts) (string, error) {
 	stat, err := os.Lstat(dir)
 	if err != nil {
 		return "", err
@@ -110,37 +108,10 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(filepath.Base(dir), sf)})
 	reader := files.NewMultiFileReader(slf, true)
 
-	resp, err := s.Request("add").
-		Option("recursive", true).
-		Body(reader).
-		Send(context.Background())
-	if err != nil {
-		return "", err
+	var out object
+	rb := s.Request("add").Option("recursive", true)
+	for _, option := range options {
+		option(rb)
 	}
-
-	defer resp.Close()
-
-	if resp.Error != nil {
-		return "", resp.Error
-	}
-
-	dec := json.NewDecoder(resp.Output)
-	var final string
-	for {
-		var out object
-		err = dec.Decode(&out)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return "", err
-		}
-		final = out.Hash
-	}
-
-	if final == "" {
-		return "", errors.New("no results received")
-	}
-
-	return final, nil
+	return out.Hash, rb.Body(reader).Exec(context.Background(), &out)
 }
