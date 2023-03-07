@@ -131,8 +131,7 @@ func TestAddDirWithCidV1(t *testing.T) {
 
 	cid, err := s.AddDir("./testdata", CidVersion(1))
 	is.Nil(err)
-	is.Equal(cid, "bafkreigxlgc3tzlfmfstpdrkfblo34ijlkvrzinvwdmi5agbgcpcmyelre")
-
+	is.Equal(cid, "bafybeibgegl5yqme2jehvvneapbq7he5ahi3tmk4cpmlagrggeji6hzayq")
 }
 
 func TestAddDirOffline(t *testing.T) {

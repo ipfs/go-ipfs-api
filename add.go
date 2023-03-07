@@ -2,6 +2,8 @@ package shell
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -108,10 +110,41 @@ func (s *Shell) AddDir(dir string, options ...AddOpts) (string, error) {
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(filepath.Base(dir), sf)})
 	reader := files.NewMultiFileReader(slf, true)
 
-	var out object
 	rb := s.Request("add").Option("recursive", true)
 	for _, option := range options {
 		option(rb)
 	}
-	return out.Hash, rb.Body(reader).Exec(context.Background(), &out)
+
+	// Here we cannot use .Exec because "add" streams responses back for each file
+	// within the directory, and we only care about the last one, which is the directory
+	// itself.
+	resp, err := rb.Body(reader).Send(context.Background())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	dec := json.NewDecoder(resp.Output)
+	var final string
+	for {
+		var out object
+		err = dec.Decode(&out)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", err
+		}
+		final = out.Hash
+	}
+
+	if final == "" {
+		return "", errors.New("no results received")
+	}
+
+	return final, nil
 }
