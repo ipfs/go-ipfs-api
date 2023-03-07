@@ -97,7 +97,7 @@ func (s *Shell) AddLink(target string) (string, error) {
 }
 
 // AddDir adds a directory recursively with all of the files under it
-func (s *Shell) AddDir(dir string) (string, error) {
+func (s *Shell) AddDir(dir string, options ...AddOpts) (string, error) {
 	stat, err := os.Lstat(dir)
 	if err != nil {
 		return "", err
@@ -110,14 +110,18 @@ func (s *Shell) AddDir(dir string) (string, error) {
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(filepath.Base(dir), sf)})
 	reader := files.NewMultiFileReader(slf, true)
 
-	resp, err := s.Request("add").
-		Option("recursive", true).
-		Body(reader).
-		Send(context.Background())
+	rb := s.Request("add").Option("recursive", true)
+	for _, option := range options {
+		option(rb)
+	}
+
+	// Here we cannot use .Exec because "add" streams responses back for each file
+	// within the directory, and we only care about the last one, which is the directory
+	// itself.
+	resp, err := rb.Body(reader).Send(context.Background())
 	if err != nil {
 		return "", err
 	}
-
 	defer resp.Close()
 
 	if resp.Error != nil {
