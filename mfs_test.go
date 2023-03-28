@@ -82,6 +82,21 @@ func TestFilesCp(t *testing.T) {
 	is.Nil(err)
 }
 
+func TestFilesCParents(t *testing.T) {
+	is := is.New(t)
+	s := NewShell(shellUrl)
+
+	err := s.FilesCp(context.Background(), "/testdata/readme", "/dirs/should/be/created/readme", FilesCp.Parents(true))
+	is.Nil(err)
+
+	stat, err := s.FilesStat(context.Background(), "/dirs/should/be/created/readme")
+	is.Nil(err)
+	is.Equal(stat.Hash, "QmfZt7xPekp7npSM6DHDUnFseAiNZQs7wq6muH9o99RsCB")
+
+	err = s.FilesRm(context.Background(), "/dirs/should/be/created/readme", true)
+	is.Nil(err)
+}
+
 func TestFilesFlush(t *testing.T) {
 	is := is.New(t)
 	s := NewShell(shellUrl)
