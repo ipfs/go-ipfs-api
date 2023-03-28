@@ -93,12 +93,10 @@ func (s *Shell) DagImportWithOpts(data interface{}, opts ...options.DagImportOpt
 		Option("allow-big-block", cfg.AllowBigBlock).
 		Body(fileReader).
 		Send(context.Background())
-
-	defer res.Close()
-
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
 
 	if res.Error != nil {
 		return nil, res.Error
