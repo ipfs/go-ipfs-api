@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	files "github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/boxo/files"
 )
 
 type FilesOpt func(*RequestBuilder) error

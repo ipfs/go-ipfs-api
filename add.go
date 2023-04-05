@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	files "github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/boxo/files"
 )
 
 type object struct {
