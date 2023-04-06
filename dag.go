@@ -8,8 +8,7 @@ import (
 	"io"
 	"strings"
 
-	files "github.com/ipfs/go-ipfs-files"
-
+	files "github.com/ipfs/boxo/files"
 	"github.com/ipfs/go-ipfs-api/options"
 )
 
