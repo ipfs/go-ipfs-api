@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	files "github.com/ipfs/boxo/files"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-ipfs-api/options"
 )
 
@@ -35,6 +37,46 @@ type DagImportStats struct {
 type DagImportOutput struct {
 	Roots []DagImportRoot
 	Stats *DagImportStats
+}
+
+type DagStat struct {
+	Cid       cid.Cid `json:",omitempty"`
+	Size      uint64  `json:",omitempty"`
+	NumBlocks int64   `json:",omitempty"`
+}
+
+type DagStatOutput struct {
+	redundantSize uint64     `json:"-"`
+	UniqueBlocks  int        `json:",omitempty"`
+	TotalSize     uint64     `json:",omitempty"`
+	SharedSize    uint64     `json:",omitempty"`
+	Ratio         float32    `json:",omitempty"`
+	DagStatsArray []*DagStat `json:"DagStats,omitempty"`
+}
+
+func (s *DagStat) UnmarshalJSON(data []byte) error {
+	/*
+		We can't rely on cid.Cid.UnmarshalJSON since it uses the {"/": "..."}
+		format. To make the output consistent and follow the Kubo API patterns
+		we use the Cid.Parse method
+	*/
+
+	type Alias DagStat
+	aux := struct {
+		Cid string `json:"Cid"`
+		*Alias
+	}{
+		Alias: (*Alias)(s),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	Cid, err := cid.Parse(aux.Cid)
+	if err != nil {
+		return err
+	}
+	s.Cid = Cid
+	return nil
 }
 
 func (s *Shell) DagGet(ref string, out interface{}) error {
@@ -150,4 +192,46 @@ func dagToFilesReader(data interface{}) (*files.MultiFileReader, error) {
 	fileReader := files.NewMultiFileReader(slf, true)
 
 	return fileReader, nil
+}
+
+// DagStat gets stats for dag with default options
+func (s *Shell) DagStat(data string) (DagStatOutput, error) {
+	return s.DagStatWithOpts(data)
+}
+
+// DagStatWithOpts gets stats for dag
+func (s *Shell) DagStatWithOpts(data string, opts ...options.DagStatOption) (DagStatOutput, error) {
+	var out DagStatOutput
+	cfg, err := options.DagStatOptions(opts...)
+	if err != nil {
+		return out, err
+	}
+
+	resp, err := s.
+		Request("dag/stat", data).
+		Option("progress", cfg.Progress).
+		Send(context.Background())
+
+	if err != nil {
+		return out, err
+	}
+
+	defer resp.Close()
+
+	if resp.Error != nil {
+		return out, resp.Error
+	}
+
+	dec := json.NewDecoder(resp.Output)
+	for {
+		var v DagStatOutput
+		if err := dec.Decode(&v); err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		out = v
+	}
+
+	return out, nil
 }
