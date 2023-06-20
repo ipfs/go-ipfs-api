@@ -5,6 +5,7 @@ module github.com/ipfs/go-ipfs-api
 require (
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927
 	github.com/ipfs/boxo v0.8.0
+	github.com/ipfs/go-cid v0.4.0
 	github.com/libp2p/go-libp2p v0.26.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.8.0
@@ -16,7 +17,6 @@ require (
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
-	github.com/ipfs/go-cid v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
