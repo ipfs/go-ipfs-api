@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"strings"
 
 	files "github.com/ipfs/boxo/files"
@@ -228,7 +227,7 @@ func (s *Shell) DagStatWithOpts(data string, opts ...options.DagStatOption) (Dag
 		if err := dec.Decode(&v); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Fatal(err)
+			return out, err
 		}
 		out = v
 	}

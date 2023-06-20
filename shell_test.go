@@ -641,6 +641,9 @@ func TestDagStat(t *testing.T) {
 
 	is.Equal(result.DagStatsArray[0].Cid.String(), "QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB")
 	is.Equal(result.UniqueBlocks, 15)
+	is.Equal(result.redundantSize, 0)
+	is.Equal(result.SharedSize, 0)
+	is.Equal(result.Ratio, 1)
 }
 
 func TestDagStatWithOpts(t *testing.T) {
@@ -653,4 +656,7 @@ func TestDagStatWithOpts(t *testing.T) {
 
 	is.Equal(result.DagStatsArray[0].Cid.String(), "QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB")
 	is.Equal(result.UniqueBlocks, 15)
+	is.Equal(result.redundantSize, 0)
+	is.Equal(result.SharedSize, 0)
+	is.Equal(result.Ratio, 1)
 }
