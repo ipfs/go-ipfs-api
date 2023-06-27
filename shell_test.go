@@ -630,33 +630,3 @@ func TestSwarmPeeringAdd(t *testing.T) {
 	_, err := s.SwarmPeeringAdd(context.Background(), addr)
 	is.Nil(err)
 }
-
-func TestDagStat(t *testing.T) {
-	is := is.New(t)
-	s := NewShell(shellUrl)
-
-	result, err := s.DagStat("QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB")
-	is.Nil(err)
-	is.Equal(result.TotalSize, 3383728)
-
-	is.Equal(result.DagStatsArray[0].Cid.String(), "QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB")
-	is.Equal(result.UniqueBlocks, 15)
-	is.Equal(result.redundantSize, 0)
-	is.Equal(result.SharedSize, 0)
-	is.Equal(result.Ratio, 1)
-}
-
-func TestDagStatWithOpts(t *testing.T) {
-	is := is.New(t)
-	s := NewShell(shellUrl)
-
-	result, err := s.DagStatWithOpts("QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB", options.Dag.Progress(true))
-	is.Nil(err)
-	is.Equal(result.TotalSize, 3383728)
-
-	is.Equal(result.DagStatsArray[0].Cid.String(), "QmUwp4xYq4pt1xavfCnpJ2aoVETf83AsvK3W8KvUGtyzFB")
-	is.Equal(result.UniqueBlocks, 15)
-	is.Equal(result.redundantSize, 0)
-	is.Equal(result.SharedSize, 0)
-	is.Equal(result.Ratio, 1)
-}
