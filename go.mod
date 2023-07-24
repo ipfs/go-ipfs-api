@@ -9,7 +9,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.8.0
 	github.com/multiformats/go-multibase v0.1.1
-	github.com/whyrusleeping/tar-utils v0.0.0-20180509141711-8c6c8ba81d5c
 )
 
 require (

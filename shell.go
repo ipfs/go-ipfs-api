@@ -16,11 +16,11 @@ import (
 	"time"
 
 	files "github.com/ipfs/boxo/files"
+	tar "github.com/ipfs/boxo/tar"
 	homedir "github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	mbase "github.com/multiformats/go-multibase"
-	tar "github.com/whyrusleeping/tar-utils"
 
 	p2pmetrics "github.com/libp2p/go-libp2p/core/metrics"
 )
