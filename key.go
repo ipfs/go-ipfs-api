@@ -118,7 +118,10 @@ func (keyImportOpt) AllowAnyKeyType(allow bool) KeyImportOpt {
 func (s *Shell) KeyImport(ctx context.Context, name string, key io.Reader, options ...KeyImportOpt) error {
 	fr := files.NewReaderFile(key)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return err
+	}
 
 	rb := s.Request("key/import", name)
 	for _, opt := range options {

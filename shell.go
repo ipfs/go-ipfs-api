@@ -13,8 +13,10 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/blang/semver/v4"
 	files "github.com/ipfs/boxo/files"
 	tar "github.com/ipfs/boxo/tar"
 	homedir "github.com/mitchellh/go-homedir"
@@ -35,6 +37,9 @@ const (
 type Shell struct {
 	url     string
 	httpcli gohttp.Client
+
+	versionOnce sync.Once
+	version     *semver.Version
 }
 
 func NewLocalShell() *Shell {
@@ -119,6 +124,39 @@ func NewShellWithClient(url string, client *gohttp.Client) *Shell {
 	}
 
 	return &sh
+}
+
+// encodedAbsolutePathVersion is the version from which the absolute path header in
+// multipart requests is %-encoded. Before this version, its sent raw.
+var encodedAbsolutePathVersion = semver.MustParse("0.23.0-dev")
+
+func (s *Shell) loadRemoteVersion() error {
+	if s.version == nil {
+		version, _, err := s.Version()
+		if err != nil {
+			return err
+		}
+
+		remoteVersion, err := semver.New(version)
+		if err != nil {
+			return err
+		}
+
+		s.versionOnce.Do(func() {
+			s.version = remoteVersion
+		})
+	}
+
+	return nil
+}
+
+func (s *Shell) newMultiFileReader(dir files.Directory) (*files.MultiFileReader, error) {
+	err := s.loadRemoteVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	return files.NewMultiFileReader(dir, true, s.version.LT(encodedAbsolutePathVersion)), nil
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {
@@ -368,7 +406,7 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 
 	fr := files.NewReaderFile(read)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
 
 	var out object
 	return out.Hash, s.Request("object/patch/"+cmd, root).
@@ -470,7 +508,7 @@ func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string
 
 	fr := files.NewBytesFile(block)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
 
 	return out.Key, s.Request("block/put").
 		Option("mhtype", mhtype).
@@ -507,7 +545,7 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 	fr := files.NewReaderFile(&data)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
 
 	var out object
 	return out.Hash, s.Request("object/put").
@@ -530,10 +568,13 @@ func (s *Shell) PubSubSubscribe(topic string) (*PubSubSubscription, error) {
 }
 
 func (s *Shell) PubSubPublish(topic, data string) (err error) {
-
 	fr := files.NewReaderFile(bytes.NewReader([]byte(data)))
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return err
+	}
 
 	encoder, _ := mbase.EncoderByName("base64url")
 	resp, err := s.Request("pubsub/pub", encoder.Encode([]byte(topic))).
