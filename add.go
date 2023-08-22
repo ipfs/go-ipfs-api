@@ -65,7 +65,11 @@ func CidVersion(version int) AddOpts {
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 	fr := files.NewReaderFile(r)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	rb := s.Request("add")
@@ -90,7 +94,11 @@ func (s *Shell) AddWithOpts(r io.Reader, pin bool, rawLeaves bool) (string, erro
 func (s *Shell) AddLink(target string) (string, error) {
 	link := files.NewLinkFile(target, nil)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", link)})
-	reader := files.NewMultiFileReader(slf, true)
+
+	reader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("add").Body(reader).Exec(context.Background(), &out)
@@ -108,7 +116,11 @@ func (s *Shell) AddDir(dir string, options ...AddOpts) (string, error) {
 		return "", err
 	}
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry(filepath.Base(dir), sf)})
-	reader := files.NewMultiFileReader(slf, true)
+
+	reader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	rb := s.Request("add").Option("recursive", true)
 	for _, option := range options {

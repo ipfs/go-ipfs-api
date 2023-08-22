@@ -338,7 +338,10 @@ func (s *Shell) FilesStat(ctx context.Context, path string, options ...FilesOpt)
 func (s *Shell) FilesWrite(ctx context.Context, path string, data io.Reader, options ...FilesOpt) error {
 	fr := files.NewReaderFile(data)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return err
+	}
 
 	rb := s.Request("files/write", path)
 	for _, opt := range options {

@@ -51,7 +51,7 @@ func (s *Shell) DagPutWithOpts(data interface{}, opts ...options.DagPutOption) (
 		return "", err
 	}
 
-	fileReader, err := dagToFilesReader(data)
+	fileReader, err := s.dagToFilesReader(data)
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +80,7 @@ func (s *Shell) DagImportWithOpts(data interface{}, opts ...options.DagImportOpt
 		return nil, err
 	}
 
-	fileReader, err := dagToFilesReader(data)
+	fileReader, err := s.dagToFilesReader(data)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (s *Shell) DagImportWithOpts(data interface{}, opts ...options.DagImportOpt
 	return &out, err
 }
 
-func dagToFilesReader(data interface{}) (*files.MultiFileReader, error) {
+func (s *Shell) dagToFilesReader(data interface{}) (*files.MultiFileReader, error) {
 	var r io.Reader
 	switch data := data.(type) {
 	case *files.MultiFileReader:
@@ -147,7 +147,5 @@ func dagToFilesReader(data interface{}) (*files.MultiFileReader, error) {
 
 	fr := files.NewReaderFile(r)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true)
-
-	return fileReader, nil
+	return s.newMultiFileReader(slf)
 }

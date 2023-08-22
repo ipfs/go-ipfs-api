@@ -496,8 +496,11 @@ func TestDagImportMultipleCARs(t *testing.T) {
 		files.FileEntry("", files.NewReaderFile(bytes.NewReader(carFile2))),
 	})
 
+	fileReader, err := s.newMultiFileReader(slf)
+	is.Nil(err)
+
 	dagImported, err := s.DagImportWithOpts(
-		files.NewMultiFileReader(slf, true),
+		fileReader,
 		options.Dag.Stats(true),
 		options.Dag.Silent(false),
 	)
