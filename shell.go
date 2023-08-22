@@ -38,8 +38,8 @@ type Shell struct {
 	url     string
 	httpcli gohttp.Client
 
-	versionOnce sync.Once
-	version     *semver.Version
+	versionMu sync.Mutex
+	version   *semver.Version
 }
 
 func NewLocalShell() *Shell {
@@ -130,33 +130,34 @@ func NewShellWithClient(url string, client *gohttp.Client) *Shell {
 // multipart requests is %-encoded. Before this version, its sent raw.
 var encodedAbsolutePathVersion = semver.MustParse("0.23.0-dev")
 
-func (s *Shell) loadRemoteVersion() error {
+func (s *Shell) loadRemoteVersion() (*semver.Version, error) {
+	s.versionMu.Lock()
+	defer s.versionMu.Unlock()
+
 	if s.version == nil {
 		version, _, err := s.Version()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		remoteVersion, err := semver.New(version)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		s.versionOnce.Do(func() {
-			s.version = remoteVersion
-		})
+		s.version = remoteVersion
 	}
 
-	return nil
+	return s.version, nil
 }
 
 func (s *Shell) newMultiFileReader(dir files.Directory) (*files.MultiFileReader, error) {
-	err := s.loadRemoteVersion()
+	version, err := s.loadRemoteVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	return files.NewMultiFileReader(dir, true, s.version.LT(encodedAbsolutePathVersion)), nil
+	return files.NewMultiFileReader(dir, true, version.LT(encodedAbsolutePathVersion)), nil
 }
 
 func (s *Shell) SetTimeout(d time.Duration) {
@@ -406,7 +407,10 @@ func (s *Shell) PatchData(root string, set bool, data interface{}) (string, erro
 
 	fr := files.NewReaderFile(read)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("object/patch/"+cmd, root).
@@ -508,7 +512,10 @@ func (s *Shell) BlockPut(block []byte, format, mhtype string, mhlen int) (string
 
 	fr := files.NewBytesFile(block)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	return out.Key, s.Request("block/put").
 		Option("mhtype", mhtype).
@@ -545,7 +552,10 @@ func (s *Shell) ObjectPut(obj *IpfsObject) (string, error) {
 
 	fr := files.NewReaderFile(&data)
 	slf := files.NewSliceDirectory([]files.DirEntry{files.FileEntry("", fr)})
-	fileReader := files.NewMultiFileReader(slf, true, s.version.LT(encodedAbsolutePathVersion))
+	fileReader, err := s.newMultiFileReader(slf)
+	if err != nil {
+		return "", err
+	}
 
 	var out object
 	return out.Hash, s.Request("object/put").
