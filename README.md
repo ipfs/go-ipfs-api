@@ -1,3 +1,9 @@
+## ⚠️ This package is no longer being maintained ⚠️
+
+Instead, we recommend using [`kubo/client/rpc`](github.com/ipfs/kubo/client/rpc). We only want to maintain one RPC Client. You are free to keep using this repository for the time being, but no more updates will be done here.
+3
+In rare case the new library does not offer a feature this one does, fill issue in Kubo, or better, submit a PR that adds it to `kubo/client/rpc`.
+
 # go-ipfs-api
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](https://protocol.ai)
