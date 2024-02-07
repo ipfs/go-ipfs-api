@@ -1,6 +1,6 @@
 ## ⚠️ This package is no longer being maintained ⚠️
 
-Please use [`kubo/client/rpc`](github.com/ipfs/kubo/client/rpc) instead. In rare case the new library does not offer a feature this one does, fill issue in Kubo, or better, submit a PR that adds it to `kubo/client/rpc`.
+Please use [`kubo/client/rpc`](https://github.com/ipfs/kubo/client/rpc) instead. In rare case the new library does not offer a feature this one does, fill issue in Kubo, or better, submit a PR that adds it to `kubo/client/rpc`.
 
 For more details about the decision, see https://github.com/ipfs/kubo/issues/9124.
 
