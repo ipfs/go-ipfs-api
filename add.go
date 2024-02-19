@@ -61,6 +61,14 @@ func CidVersion(version int) AddOpts {
 	}
 }
 
+// WrapWithDirectory allows for wrapping files with a root directory object.
+func WrapWithDirectory(enabled bool) AddOpts {
+	return func(rb *RequestBuilder) error {
+		rb.Option("wrap-with-directory", enabled)
+		return nil
+	}
+}
+
 // Add adds a file to ipfs pinning it with the given options
 func (s *Shell) Add(r io.Reader, options ...AddOpts) (string, error) {
 	fr := files.NewReaderFile(r)
