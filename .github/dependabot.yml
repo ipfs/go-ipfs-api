@@ -1,0 +1,14 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "11:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: github.com/libp2p/go-libp2p-core
+    versions:
+    - 0.8.0
+    - 0.8.2
+    - 0.8.3
